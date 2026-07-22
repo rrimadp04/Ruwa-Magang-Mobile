@@ -4,7 +4,7 @@ import '../../dashboard/model/participant_dashboard.dart';
 import '../../dashboard/repository/dashboard_repository.dart';
 import '../../presensi/repository/presensi_repository.dart';
 
-const _primary = Color(0xFF3F32E6);
+const _primary = Color(0xFF2457D6);
 const _ink = Color(0xFF172033);
 
 class HomeShell extends StatefulWidget {
@@ -59,10 +59,16 @@ class _HomeShellState extends State<HomeShell> {
         padding: const EdgeInsets.fromLTRB(15, 8, 15, 24),
         children: [
           Row(children: [
-            Container(width: 32, height: 32, alignment: Alignment.center, decoration: BoxDecoration(color: _primary, borderRadius: BorderRadius.circular(10)), child: const Text('RM', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 11))),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.asset('lib/auth/screen/asset/logo.png', width: 32, height: 32, fit: BoxFit.cover),
+            ),
             const SizedBox(width: 10),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Ruwa Magang', style: TextStyle(fontWeight: FontWeight.w700)), Text(_date(today), style: const TextStyle(fontSize: 10, color: Color(0xFF667085)))])),
-            const CircleAvatar(radius: 16, backgroundColor: Color(0xFFE6E2FF), child: Text('P', style: TextStyle(color: _primary, fontWeight: FontWeight.w700))),
+            GestureDetector(
+              onTap: () => _go('/profil'),
+              child: const CircleAvatar(radius: 16, backgroundColor: Color(0xFFD6E4FF), child: Text('P', style: TextStyle(color: _primary, fontWeight: FontWeight.w700))),
+            ),
           ]),
           const SizedBox(height: 26),
           const Text('Dashboard Peserta', style: TextStyle(color: _ink, fontSize: 20, fontWeight: FontWeight.w800)),
@@ -134,7 +140,7 @@ class _HomeShellState extends State<HomeShell> {
 
   Widget _activity({required IconData icon, required String title, required String subtitle, required Color color, required IconData action, required VoidCallback onTap}) => Material(color: Colors.white, borderRadius: BorderRadius.circular(14), child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(14), child: Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(border: Border.all(color: const Color(0xFFE5E7EF)), borderRadius: BorderRadius.circular(14)), child: Row(children: [Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: _primary)), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)), Text(subtitle, style: const TextStyle(color: Color(0xFF667085), fontSize: 10))])), Container(padding: const EdgeInsets.all(9), decoration: BoxDecoration(color: _primary, borderRadius: BorderRadius.circular(10)), child: Icon(action, color: Colors.white, size: 18))]))));
 
-  Widget _bottomNavigation() => NavigationBar(selectedIndex: 0, indicatorColor: const Color(0xFFE4E0FF), onDestinationSelected: (index) { const routes = ['/dashboard', '/daftar', '/logbook', '/nilai-sertifikat', '/profil']; _go(routes[index]); }, destinations: const [NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Beranda'), NavigationDestination(icon: Icon(Icons.assignment_outlined), label: 'Daftar'), NavigationDestination(icon: Icon(Icons.book_outlined), label: 'Logbook'), NavigationDestination(icon: Icon(Icons.workspace_premium_outlined), label: 'Nilai & Sertif'), NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profil')]);
+  Widget _bottomNavigation() => NavigationBar(selectedIndex: 0, indicatorColor: const Color(0xFFD6E4FF), onDestinationSelected: (index) { const routes = ['/dashboard', '/daftar', '/logbook', '/nilai-sertifikat', '/profil']; _go(routes[index]); }, destinations: const [NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Beranda'), NavigationDestination(icon: Icon(Icons.assignment_outlined), label: 'Daftar'), NavigationDestination(icon: Icon(Icons.book_outlined), label: 'Logbook'), NavigationDestination(icon: Icon(Icons.workspace_premium_outlined), label: 'Nilai & Sertif'), NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profil')]);
 
   void _go(String route) { if (route != '/dashboard') Navigator.pushNamed(context, route); }
 }

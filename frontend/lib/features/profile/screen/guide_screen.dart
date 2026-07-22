@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class GuideScreen extends StatefulWidget {
   const GuideScreen({super.key});
@@ -9,6 +10,34 @@ class GuideScreen extends StatefulWidget {
 
 class _GuideScreenState extends State<GuideScreen> {
   int _selected = 0;
+  final List<YoutubePlayerController?> _youtubeControllers = [];
+
+  @override
+  void initState() {
+    super.initState();
+    const youtubeUrls = [
+      String.fromEnvironment('GUIDE_VIDEO_1_URL'),
+      String.fromEnvironment('GUIDE_VIDEO_2_URL'),
+      String.fromEnvironment('GUIDE_VIDEO_3_URL'),
+    ];
+    for (final youtubeUrl in youtubeUrls) {
+      final videoId = YoutubePlayer.convertUrlToId(youtubeUrl);
+      _youtubeControllers.add(videoId == null || videoId.isEmpty
+          ? null
+          : YoutubePlayerController(
+              initialVideoId: videoId,
+              flags: const YoutubePlayerFlags(autoPlay: false),
+            ));
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final controller in _youtubeControllers) {
+      controller?.dispose();
+    }
+    super.dispose();
+  }
 
   static const _guides = <({String title, String description, List<String> steps})>[
     (
@@ -48,13 +77,34 @@ class _GuideScreenState extends State<GuideScreen> {
             ...List.generate(_guides.length, _tutorialTile),
             const SizedBox(height: 16),
             _articleCard(guide),
+            const SizedBox(height: 28),
+            const Divider(),
+            const SizedBox(height: 10),
+            Container(
+              color: const Color(0xFFF0F4FF),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: const Text('Panduan Magang', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF2563EB))),
+            ),
+            const SizedBox(height: 6),
+            const Text('© 2026 Ruwa Magang. All Rights Reserved.', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
           ],
         ),
       ),
     );
   }
 
-  Widget _videoPlaceholder() => Container(
+  Widget _videoPlaceholder() {
+    final controller = _youtubeControllers[_selected];
+    if (controller != null) {
+      return SizedBox(
+        height: 164,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: YoutubePlayer(controller: controller),
+        ),
+      );
+    }
+    return Container(
         height: 164,
         decoration: BoxDecoration(color: const Color(0xFF2E3754), borderRadius: BorderRadius.circular(16)),
         child: const Column(
@@ -66,6 +116,7 @@ class _GuideScreenState extends State<GuideScreen> {
           ],
         ),
       );
+  }
 
   Widget _tutorialTile(int index) {
     final isSelected = index == _selected;

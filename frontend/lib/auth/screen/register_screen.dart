@@ -86,7 +86,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  InputDecoration _decoration({required IconData icon, Widget? suffix}) {
+  InputDecoration _decoration({required IconData icon, Widget? suffix, String? hintText}) {
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(10),
       borderSide: const BorderSide(color: LoginStyle.inputBorder),
@@ -107,18 +107,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: Icon(icon, size: 19, color: LoginStyle.muted),
       ),
       suffixIcon: suffix,
+      hintText: hintText,
+      hintStyle: const TextStyle(color: Color(0xFFB0B7C3), fontWeight: FontWeight.w400),
       border: border,
       enabledBorder: border,
       focusedBorder: border.copyWith(borderSide: const BorderSide(color: LoginStyle.primary, width: 1.4)),
     );
   }
 
-  Widget _field(String label, TextEditingController controller, IconData icon, {bool password = false, bool confirmation = false, TextInputType? keyboardType}) {
+  Widget _field(String label, TextEditingController controller, IconData icon, {bool password = false, bool confirmation = false, TextInputType? keyboardType, String? hintText, String? helpText}) {
     final obscure = confirmation ? _obscureConfirmation : _obscurePassword;
     return Padding(
       padding: const EdgeInsets.only(top: 18),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+        if (helpText != null) Text(helpText, style: const TextStyle(fontSize: 11, color: LoginStyle.muted)),
         const SizedBox(height: 7),
         TextField(
           controller: controller,
@@ -126,6 +129,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           keyboardType: keyboardType,
           decoration: _decoration(
             icon: icon,
+            hintText: hintText,
             suffix: password ? IconButton(
               icon: Icon(obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
               onPressed: () => setState(() {
@@ -161,10 +165,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const Text('Daftar Akun Baru', textAlign: TextAlign.center, style: TextStyle(color: LoginStyle.primary, fontSize: 20, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 6),
                   const Text('Lengkapi data untuk membuat akun Ruwa Magang', textAlign: TextAlign.center, style: TextStyle(color: LoginStyle.muted, fontSize: 14)),
-                  _field('Name', _nameController, Icons.person_outline),
-                  _field('Email', _emailController, Icons.email_outlined, keyboardType: TextInputType.emailAddress),
-                  _field('Password', _passwordController, Icons.lock_outline, password: true),
-                  _field('Confirm Password', _confirmController, Icons.lock_outline, password: true, confirmation: true),
+                  _field('Nama Lengkap', _nameController, Icons.person_outline, hintText: 'Contoh: John Doe'),
+                  _field('Email', _emailController, Icons.email_outlined, keyboardType: TextInputType.emailAddress, hintText: 'jhon@gmail.com'),
+                  _field('Password', _passwordController, Icons.lock_outline, password: true, hintText: 'Buat password', helpText: '* Minimal 8 karakter dengan kombinasi huruf dan angka'),
+                  _field('Confirm Password', _confirmController, Icons.lock_outline, password: true, confirmation: true, hintText: 'Ulangi password'),
                   _field('Universitas / Sekolah', _universityController, Icons.business_outlined),
                   const SizedBox(height: 18),
                   const Text('Daftar sebagai', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
