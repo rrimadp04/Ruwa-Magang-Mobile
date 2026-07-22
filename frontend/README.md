@@ -1,4 +1,21 @@
-# frontend
+# Ruwa Magang Mobile
+
+## Konfigurasi API development
+
+Seluruh request API menggunakan `ApiConfig` di `lib/core/config/api_config.dart`.
+
+- Android Emulator: jalankan seperti biasa. Default-nya adalah
+  `http://10.0.2.2:8001/api`.
+- HP fisik pada jaringan Wi-Fi yang sama: jalankan dengan `dart-define`, tanpa
+  mengubah source code:
+
+  ```bash
+  flutter run --dart-define=API_BASE_URL=http://192.168.9.168:8001/api
+  ```
+
+  Ganti IP pada perintah tersebut dengan IP LAN laptop yang sedang aktif.
+  Parameter yang sama juga digunakan pada `flutter build`, sehingga URL
+  development tidak tersimpan sebagai hardcode di service atau screen.
 
 A new Flutter project.
 

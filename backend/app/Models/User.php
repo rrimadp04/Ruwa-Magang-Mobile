@@ -10,12 +10,27 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
+#[Fillable(['name', 'email', 'university', 'role', 'password', 'api_token', 'photo'])]
+#[Hidden(['password', 'remember_token', 'api_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    public function participant()
+    {
+        return $this->hasOne(Participant::class);
+    }
+
+    public function logbooks()
+    {
+        return $this->hasMany(Logbook::class);
+    }
+
+    public function presensis()
+    {
+        return $this->hasMany(Presensi::class);
+    }
 
     /**
      * Get the attributes that should be cast.
