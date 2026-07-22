@@ -24,7 +24,11 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'university',
+        'role',
         'password',
+        'api_token',
+        'photo',
     ];
 
     /**
@@ -35,6 +39,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'api_token',
     ];
 
     /**
@@ -43,6 +48,22 @@ class User extends Authenticatable
     public function presensis(): HasMany
     {
         return $this->hasMany(Presensi::class);
+    }
+
+    /**
+     * Relasi ke data peserta.
+     */
+    public function participant()
+    {
+        return $this->hasOne(Participant::class);
+    }
+
+    /**
+     * Relasi ke logbook.
+     */
+    public function logbooks()
+    {
+        return $this->hasMany(Logbook::class);
     }
 
     /**
