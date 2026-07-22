@@ -118,6 +118,18 @@ class PresensiSuccessScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 26),
+              if (!pulang)
+                Text(
+                  izin
+                      ? 'ID PERMOHONAN: PRMT-${_permohonanId(item)}'
+                      : 'ATTENDANCE ID: PRSN-${_permohonanId(item)}',
+                  style: const TextStyle(
+                    color: _blue,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11,
+                  ),
+                ),
+              if (!pulang) const SizedBox(height: 8),
               const Text(
                 'PRESENSI MAGANG',
                 style: TextStyle(
@@ -150,6 +162,23 @@ class PresensiSuccessScreen extends StatelessWidget {
         ? Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'ID Permohonan',
+                    style: TextStyle(fontSize: 11, color: Color(0xFF697386)),
+                  ),
+                  Text(
+                    '#PRMT-${_permohonanId(item)}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
               const Text(
                 'Keterangan Izin',
                 style: TextStyle(fontSize: 12, color: Color(0xFF5D6675)),
@@ -170,6 +199,31 @@ class PresensiSuccessScreen extends StatelessWidget {
                 avatar: Icon(Icons.more_horiz, size: 18, color: _blue),
                 backgroundColor: Color(0xFFE4EDFF),
               ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0F4FF),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Icon(Icons.info_outline, size: 16, color: _blue),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Catatan\nPermohonan izin Anda akan ditinjau secara berkala oleh mentor atau koordinator unit kerja. Mohon pastikan perangkat Anda tetap terhubung dengan internet untuk menerima notifikasi status terbaru.',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: Color(0xFF3B4A63),
+                          height: 1.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           )
         : Column(
@@ -188,10 +242,54 @@ class PresensiSuccessScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 10, color: Color(0xFF697386)),
               ),
               const SizedBox(height: 4),
-              const Text(
-                'Lokasi Magang',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              Text(
+                item.locationAddress ?? 'Alamat lokasi tidak tersedia',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
+              if (pulang) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDCFCE7),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.check_circle,
+                        size: 13,
+                        color: Color(0xFF16A34A),
+                      ),
+                      SizedBox(width: 5),
+                      Text(
+                        'Selfie Terverifikasi',
+                        style: TextStyle(
+                          color: Color(0xFF16A34A),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ] else ...[
+                const SizedBox(height: 12),
+                Container(
+                  height: 110,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE5EEFF),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(Icons.map_outlined, color: _blue, size: 30),
+                ),
+              ],
               const Divider(height: 28),
               Row(
                 children: [
@@ -242,3 +340,13 @@ String _time(DateTime value) =>
     '${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}:${value.second.toString().padLeft(2, '0')}';
 String _date(DateTime value) =>
     '${const ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'][value.weekday - 1]}, ${value.day} ${const ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][value.month - 1]} ${value.year}';
+
+/// API belum mengembalikan nomor ID presensi/permohonan yang mudah dibaca
+/// (mis. "PRSN-20250524-8821" pada mockup), jadi dibangun dari
+/// presensi_date + id numerik sebagai representasi yang cukup unik.
+String _permohonanId(Presensi item) {
+  final d = item.presensiDate;
+  final datePart =
+      '${d.year}${d.month.toString().padLeft(2, '0')}${d.day.toString().padLeft(2, '0')}';
+  return '$datePart-${item.id}';
+}
