@@ -2,15 +2,24 @@ import 'package:flutter/material.dart';
 
 import '../../dashboard/model/participant_dashboard.dart';
 import '../../dashboard/repository/dashboard_repository.dart';
+import '../../dashboard/repository/registration_status_repository.dart';
+import '../../dashboard/service/registration_status_service.dart';
+import '../../dashboard/widget/registration_status_card.dart';
 import '../../presensi/repository/presensi_repository.dart';
 
 const _primary = Color(0xFF2457D6);
 const _ink = Color(0xFF172033);
 
 class HomeShell extends StatefulWidget {
-  const HomeShell({super.key, required this.presensiRepository, required this.dashboardRepository});
+  const HomeShell({
+    super.key,
+    required this.presensiRepository,
+    required this.dashboardRepository,
+    required this.registrationStatusRepository,
+  });
   final PresensiRepository presensiRepository;
   final DashboardRepository dashboardRepository;
+  final RegistrationStatusRepository registrationStatusRepository;
 
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -18,11 +27,13 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   late Future<ParticipantDashboard> _future;
+  late Future<RegistrationStatus> _statusFuture;
 
   @override
   void initState() {
     super.initState();
     _future = _load();
+    _statusFuture = widget.registrationStatusRepository.getStatus();
   }
 
   Future<ParticipantDashboard> _load() => widget.dashboardRepository.getDashboard();
@@ -54,10 +65,20 @@ class _HomeShellState extends State<HomeShell> {
       today,
     );
     return RefreshIndicator(
-      onRefresh: () async => setState(() => _future = _load()),
+      onRefresh: () async => setState(() {
+        _future = _load();
+        _statusFuture = widget.registrationStatusRepository.getStatus();
+      }),
       child: ListView(
         padding: const EdgeInsets.fromLTRB(15, 8, 15, 24),
         children: [
+          FutureBuilder<RegistrationStatus>(
+            future: _statusFuture,
+            builder: (context, snap) {
+              if (!snap.hasData) return const SizedBox.shrink();
+              return RegistrationStatusCard(status: snap.requireData);
+            },
+          ),
           Row(children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(10),

@@ -14,7 +14,7 @@ abstract final class ApiConfig {
   );
 
   static const String _androidEmulatorBaseUrl =
-      'http://10.0.2.2:8001/api';
+      'http://192.168.9.91:8001/api';
 
   /// Base URL tunggal yang digunakan seluruh HTTP service.
   static String get baseUrl {

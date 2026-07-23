@@ -87,6 +87,27 @@ class DashboardController extends Controller
         ]);
     }
 
+    /**
+     * Status proses pendaftaran peserta.
+     * Response: not_registered | pending | accepted
+     */
+    public function registrationStatus(Request $request)
+    {
+        $participant = $request->user()->participant;
+
+        if (! $participant) {
+            $status = 'not_registered';
+        } elseif ($participant->status === 'aktif' || $participant->status === 'accepted') {
+            $status = 'accepted';
+        } elseif ($participant->status === 'pending') {
+            $status = 'pending';
+        } else {
+            $status = 'not_registered';
+        }
+
+        return response()->json(['registration_status' => $status]);
+    }
+
     public function index(Request $request)
     {
         $user = $request->user();
