@@ -54,9 +54,13 @@ class DashboardController extends Controller
 
     /**
      * Riwayat presensi minimal yang kompatibel dengan model Flutter.
+     * Hanya dapat diakses peserta dengan status accepted/aktif.
      */
     public function presensi(Request $request)
     {
+        $forbidden = $this->guardAccepted($request);
+        if ($forbidden) return $forbidden;
+
         $items = Presensi::where('user_id', $request->user()->id)
             ->latest('presensi_date')
             ->get()
@@ -106,6 +110,26 @@ class DashboardController extends Controller
         }
 
         return response()->json(['registration_status' => $status]);
+    }
+
+    /**
+     * Kembalikan 403 jika peserta belum diterima (status bukan accepted/aktif).
+     * Mengembalikan null jika akses diizinkan.
+     */
+    private function guardAccepted(Request $request): ?\Illuminate\Http\JsonResponse
+    {
+        $participant = $request->user()->participant;
+        $accepted = $participant &&
+            in_array($participant->status, ['aktif', 'accepted'], true);
+
+        if (! $accepted) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Pendaftaran Anda belum disetujui. Fitur ini akan tersedia setelah admin menerima pendaftaran Anda.',
+            ], 403);
+        }
+
+        return null;
     }
 
     public function index(Request $request)
