@@ -15,10 +15,17 @@ import 'features/dashboard/repository/dashboard_repository.dart';
 import 'features/dashboard/service/dashboard_service.dart';
 import 'features/dashboard/repository/registration_status_repository.dart';
 import 'features/dashboard/service/registration_status_service.dart';
-import 'features/dashboard/screen/participant_section_screen.dart';
 import 'features/profile/repository/profile_repository.dart';
 import 'features/profile/screen/participant_profile_screen.dart';
 import 'features/profile/service/profile_service.dart';
+import 'features/logbook/repository/logbook_repository.dart';
+import 'features/logbook/screen/list_logbook_screen.dart';
+import 'features/logbook/service/logbook_service.dart';
+import 'features/nilai_sertifikat/repository/nilai_repository.dart';
+import 'features/nilai_sertifikat/screen/nilai_sertifikat_screen.dart';
+import 'features/nilai_sertifikat/screen/sertifikat_screen.dart';
+import 'features/nilai_sertifikat/service/nilai_service.dart';
+import 'features/opd/pages/opd_page.dart';
 
 void main() {
   final apiBaseUrl = ApiConfig.baseUrl;
@@ -77,6 +84,9 @@ class _RuwaMagangAppState extends State<RuwaMagangApp> {
                   repository: repositories.presensi,
                   dashboardRepository: repositories.dashboard,
                   registrationStatusRepository: repositories.registrationStatus,
+                  logbookRepository: repositories.logbook,
+                  nilaiRepository: repositories.nilai,
+                  profileRepository: repositories.profile,
                 )
               : LoginScreen(
                   repository: repositories.presensi,
@@ -95,26 +105,20 @@ class _RuwaMagangAppState extends State<RuwaMagangApp> {
               repository: repositories.presensi,
               dashboardRepository: repositories.dashboard,
               registrationStatusRepository: repositories.registrationStatus,
+              logbookRepository: repositories.logbook,
+              nilaiRepository: repositories.nilai,
+              profileRepository: repositories.profile,
             ),
             '/presensi': (_) =>
                 PresensiScreen(repository: repositories.presensi),
-            '/daftar': (_) => const ParticipantSectionScreen(
-              title: 'Daftar',
-              description:
-                  'Lihat informasi pendaftaran dan penempatan magang Anda.',
-              icon: Icons.assignment_outlined,
+            '/daftar': (_) => const OpdPage(),
+            '/logbook': (_) => ListLogbookScreen(
+              repository: repositories.logbook,
             ),
-            '/logbook': (_) => const ParticipantSectionScreen(
-              title: 'Logbook',
-              description: 'Catat dan lengkapi aktivitas harian magang Anda.',
-              icon: Icons.edit_note_outlined,
+            '/nilai-sertifikat': (_) => NilaiSertifikatScreen(
+              repository: repositories.nilai,
             ),
-            '/nilai-sertifikat': (_) => const ParticipantSectionScreen(
-              title: 'Nilai & Sertifikat',
-              description:
-                  'Pantau penilaian dan sertifikat magang yang diterbitkan.',
-              icon: Icons.workspace_premium_outlined,
-            ),
+            '/sertifikat': (_) => const SertifikatScreen(),
             '/profil': (_) =>
                 ParticipantProfileScreen(repository: repositories.profile),
           },
@@ -170,6 +174,12 @@ class _RuwaMagangAppState extends State<RuwaMagangApp> {
           accessToken: token,
         ),
       ),
+      LogbookRepository(
+        LogbookService(baseUrl: widget.apiBaseUrl, accessToken: token),
+      ),
+      NilaiRepository(
+        NilaiService(baseUrl: widget.apiBaseUrl, accessToken: token),
+      ),
       token.isNotEmpty,
     );
   }
@@ -187,11 +197,15 @@ class _Repositories {
     this.dashboard,
     this.profile,
     this.registrationStatus,
+    this.logbook,
+    this.nilai,
     this.isAuthenticated,
   );
   final PresensiRepository presensi;
   final DashboardRepository dashboard;
   final ProfileRepository profile;
   final RegistrationStatusRepository registrationStatus;
+  final LogbookRepository logbook;
+  final NilaiRepository nilai;
   final bool isAuthenticated;
 }

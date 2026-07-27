@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../ds.dart';
 import 'detail_nilai_screen.dart';
-import 'notification_screen.dart';
 import 'sertifikat_belum_tersedia_screen.dart';
 import '../repository/nilai_repository.dart';
 
@@ -110,33 +109,6 @@ class _State extends State<NilaiSertifikatScreen>
               ),
               SizedBox(height: 3),
               Text('Perkembangan akhir magang Anda', style: kStyleSubtitle),
-            ],
-          ),
-        ),
-      ),
-      InkWell(
-        onTap: () => Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => const NotificationScreen())),
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: kWhite,
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: kBorder),
-            boxShadow: const [BoxShadow(color: Color(0x080F172A), blurRadius: 10, offset: Offset(0, 4))],
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              const Icon(Icons.notifications_none_rounded, color: kInk, size: 22),
-              Positioned(
-                top: 11,
-                right: 11,
-                child: Container(width: 7, height: 7, decoration: const BoxDecoration(color: kRed, shape: BoxShape.circle)),
-              ),
             ],
           ),
         ),
