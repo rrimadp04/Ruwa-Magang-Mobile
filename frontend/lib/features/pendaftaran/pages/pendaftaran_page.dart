@@ -41,16 +41,28 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
   }
 
   Future<void> _pickDate(bool isMulai) async {
+    final today = DateTime.now();
+    final todayOnly = DateTime(today.year, today.month, today.day);
+    final initialDate = isMulai
+        ? todayOnly
+        : (_tanggalMulai != null ? _tanggalMulai!.add(const Duration(days: 1)) : todayOnly);
+    final firstDate = isMulai
+        ? todayOnly
+        : (_tanggalMulai != null ? _tanggalMulai!.add(const Duration(days: 1)) : todayOnly);
     final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2024),
+      initialDate: initialDate,
+      firstDate: firstDate,
       lastDate: DateTime(2030),
     );
     if (picked != null) {
       setState(() {
         if (isMulai) {
           _tanggalMulai = picked;
+          // reset tanggal selesai jika lebih awal dari mulai
+          if (_tanggalSelesai != null && _tanggalSelesai!.isBefore(picked)) {
+            _tanggalSelesai = null;
+          }
         } else {
           _tanggalSelesai = picked;
         }

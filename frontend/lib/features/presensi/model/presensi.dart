@@ -12,6 +12,10 @@ class Presensi {
     this.locationAccuracy,
     this.locationDistanceMeters,
     this.locationValid,
+    this.locationAddress,
+    this.proofPath,
+    this.proofMimeType,
+    this.proofSizeBytes,
   });
 
   final int id;
@@ -26,6 +30,10 @@ class Presensi {
   final int? locationAccuracy;
   final int? locationDistanceMeters;
   final bool? locationValid;
+  final String? locationAddress;
+  final String? proofPath;
+  final String? proofMimeType;
+  final int? proofSizeBytes;
 
   factory Presensi.fromJson(Map<String, dynamic> json) => Presensi(
     id: (json['id'] as num).toInt(),
@@ -39,7 +47,18 @@ class Presensi {
     longitude: (json['longitude'] as num?)?.toDouble(),
     locationAccuracy: (json['location_accuracy'] as num?)?.toInt(),
     locationDistanceMeters: (json['location_distance_meters'] as num?)?.toInt(),
-    locationValid: json['location_valid'] as bool?,
+    // Dokumentasi API mengembalikan location_valid sebagai int (0/1) pada
+    // GET /peserta/presensi namun bool pada POST /peserta/presensi,
+    // sehingga di-parse secara fleksibel di sini.
+    locationValid: switch (json['location_valid']) {
+      bool value => value,
+      num value => value != 0,
+      _ => null,
+    },
+    locationAddress: json['location_address'] as String?,
+    proofPath: json['proof_path'] as String?,
+    proofMimeType: json['proof_mime_type'] as String?,
+    proofSizeBytes: (json['proof_size_bytes'] as num?)?.toInt(),
   );
 }
 
