@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Mobile\Auth\AuthController;
+use App\Http\Controllers\Api\Mobile\Auth\PasswordResetController;
 use App\Http\Controllers\Api\Mobile\Dashboard\DashboardController;
 use App\Http\Controllers\Api\Mobile\Profile\AccountSettingsController;
 use App\Http\Controllers\Api\PresensiController;
@@ -8,9 +9,11 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
+Route::post('/forgot-password', [PasswordResetController::class, 'sendOtp']);
+Route::post('/reset-password', [PasswordResetController::class, 'resetWithOtp']);
 Route::get('/peserta/profile/photo/{user}', [AccountSettingsController::class, 'photo']);
 
-Route::middleware('api.token')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::get('/peserta/dashboard', [DashboardController::class, 'index']);

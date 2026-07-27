@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../dashboard/model/participant_dashboard.dart';
 import '../../dashboard/repository/dashboard_repository.dart';
 import '../../dashboard/repository/registration_status_repository.dart';
-import '../../dashboard/service/registration_status_service.dart';
 import '../../dashboard/widget/registration_status_card.dart';
 import '../../presensi/repository/presensi_repository.dart';
 

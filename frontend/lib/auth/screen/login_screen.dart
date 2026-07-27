@@ -6,6 +6,7 @@ import '../../core/config/api_config.dart';
 import '../repositories/auth_repository.dart';
 import '../services/auth_service.dart';
 import 'dashboard/dashboard_screen.dart';
+import 'forgot_password_screen.dart';
 import 'login_style.dart';
 import 'register_screen.dart';
 
@@ -14,7 +15,7 @@ class LoginScreen extends StatefulWidget {
 
   static const routeName = '/login';
   final PresensiRepository repository;
-  final VoidCallback? onAuthenticated;
+  final void Function(String token)? onAuthenticated;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -64,7 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
       if (widget.onAuthenticated != null) {
-        widget.onAuthenticated!();
+        widget.onAuthenticated!(result.token);
       } else {
         Navigator.pushReplacementNamed(context, DashboardScreen.routeName);
       }
@@ -170,8 +171,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         const Text('Ingat saya', style: TextStyle(fontSize: 13)),
                         const Spacer(),
                         TextButton(
-                          onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Silakan hubungi administrator untuk mengatur ulang password.')),
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
                           ),
                           child: const Text('Lupa Password?', style: TextStyle(fontSize: 13)),
                         ),
