@@ -226,12 +226,18 @@ class _PresensiScreenState extends State<PresensiScreen> {
       );
       if (places.isNotEmpty) {
         final place = places.first;
-        final address = [
-          place.street,
-          place.subLocality,
-          place.locality,
-          place.administrativeArea,
-        ].whereType<String>().map((part) => part.trim()).where((part) => part.isNotEmpty).toSet().join(', ');
+        final address =
+            [
+                  place.street,
+                  place.subLocality,
+                  place.locality,
+                  place.administrativeArea,
+                ]
+                .whereType<String>()
+                .map((part) => part.trim())
+                .where((part) => part.isNotEmpty)
+                .toSet()
+                .join(', ');
         if (address.isNotEmpty) return address;
       }
     } catch (_) {
@@ -531,16 +537,6 @@ class _PresensiScreenState extends State<PresensiScreen> {
   bool get _isWeekend =>
       DateTime.now().weekday == DateTime.saturday ||
       DateTime.now().weekday == DateTime.sunday;
-
-  /// Placeholder dipakai saat mencari data jam masuk/pulang hari ini
-  /// yang belum ada (id: 0 menandakan "tidak ditemukan").
-  Presensi get _emptyPresensi => Presensi(
-    id: 0,
-    status: '',
-    type: '',
-    presensiDate: DateTime(0),
-    createdAt: DateTime(0),
-  );
 
   Widget _home() {
     final action = _todayAction;
@@ -971,7 +967,8 @@ class _PresensiScreenState extends State<PresensiScreen> {
   /// ditandai "Libur" walau tidak ada baris presensi untuk tanggal itu.
   List<_DailyRecap> get _dailyRecap {
     final now = DateTime.now();
-    final firstOfMonth = _recapDateRange?.start ?? DateTime(now.year, now.month, 1);
+    final firstOfMonth =
+        _recapDateRange?.start ?? DateTime(now.year, now.month, 1);
     final lastDate = _recapDateRange?.end.isBefore(now) == true
         ? _recapDateRange!.end
         : now;
@@ -1020,7 +1017,9 @@ class _PresensiScreenState extends State<PresensiScreen> {
       final pulang = records.where((r) => r.type == 'pulang').toList();
       final jamMasuk = masuk.isNotEmpty ? masuk.first.createdAt : null;
       final jamPulang = pulang.isNotEmpty ? pulang.first.createdAt : null;
-      final tanpaKeterangan = records.any((r) => r.status == 'tanpa_keterangan');
+      final tanpaKeterangan = records.any(
+        (r) => r.status == 'tanpa_keterangan',
+      );
 
       result.add(
         _DailyRecap(
@@ -1046,7 +1045,9 @@ class _PresensiScreenState extends State<PresensiScreen> {
 
     final hadirCount = all.where((d) => d.status == 'Hadir').length;
     final izinCount = all.where((d) => d.status == 'Izin').length;
-    final tanpaKeteranganCount = all.where((d) => d.status == 'Tanpa Keterangan').length;
+    final tanpaKeteranganCount = all
+        .where((d) => d.status == 'Tanpa Keterangan')
+        .length;
     final totalWorkdays = hadirCount + izinCount + tanpaKeteranganCount;
     final percent = totalWorkdays == 0
         ? 0
@@ -1123,11 +1124,19 @@ class _PresensiScreenState extends State<PresensiScreen> {
           Row(
             children: [
               Expanded(
-                child: _statCard('Libur', all.where((d) => d.status == 'Libur').length, const Color(0xFF64748B)),
+                child: _statCard(
+                  'Libur',
+                  all.where((d) => d.status == 'Libur').length,
+                  const Color(0xFF64748B),
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _statCard('Tanpa Keterangan', tanpaKeteranganCount, const Color(0xFFDC2626)),
+                child: _statCard(
+                  'Tanpa Keterangan',
+                  tanpaKeteranganCount,
+                  const Color(0xFFDC2626),
+                ),
               ),
             ],
           ),
@@ -1204,7 +1213,9 @@ class _PresensiScreenState extends State<PresensiScreen> {
             children: [
               _filterChip(
                 icon: Icons.calendar_today_outlined,
-                label: _recapDateRange == null ? 'Semua Tanggal' : _dateRangeLabel(_recapDateRange!),
+                label: _recapDateRange == null
+                    ? 'Semua Tanggal'
+                    : _dateRangeLabel(_recapDateRange!),
                 active: _recapDateRange != null,
                 onTap: _pickDateRange,
               ),
@@ -1328,13 +1339,21 @@ class _PresensiScreenState extends State<PresensiScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Kalender ${_monthName(month.month)} ${month.year}',
-              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+          Text(
+            'Kalender ${_monthName(month.month)} ${month.year}',
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+          ),
           const SizedBox(height: 12),
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              Text('Sn'), Text('Sl'), Text('Rb'), Text('Km'), Text('Jm'), Text('Sb'), Text('Mg'),
+              Text('Sn'),
+              Text('Sl'),
+              Text('Rb'),
+              Text('Km'),
+              Text('Jm'),
+              Text('Sb'),
+              Text('Mg'),
             ],
           ),
           const SizedBox(height: 8),
@@ -1352,8 +1371,18 @@ class _PresensiScreenState extends State<PresensiScreen> {
                 return Container(
                   margin: const EdgeInsets.all(2),
                   alignment: Alignment.center,
-                  decoration: BoxDecoration(color: color.withValues(alpha: 0.18), shape: BoxShape.circle),
-                  child: Text('$day', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.18),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    '$day',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: color,
+                    ),
+                  ),
                 );
               }),
             ],
@@ -1362,14 +1391,25 @@ class _PresensiScreenState extends State<PresensiScreen> {
           Wrap(
             spacing: 10,
             runSpacing: 6,
-            children: ['Hadir', 'Izin', 'Tanpa Keterangan', 'Libur'].map((status) => Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(width: 8, height: 8, decoration: BoxDecoration(color: _statusColors[status], shape: BoxShape.circle)),
-                const SizedBox(width: 4),
-                Text(status, style: const TextStyle(fontSize: 10)),
-              ],
-            )).toList(),
+            children: ['Hadir', 'Izin', 'Tanpa Keterangan', 'Libur']
+                .map(
+                  (status) => Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: _statusColors[status],
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(status, style: const TextStyle(fontSize: 10)),
+                    ],
+                  ),
+                )
+                .toList(),
           ),
         ],
       ),
@@ -1377,8 +1417,18 @@ class _PresensiScreenState extends State<PresensiScreen> {
   }
 
   String _monthName(int month) => const [
-    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+    'Januari',
+    'Februari',
+    'Maret',
+    'April',
+    'Mei',
+    'Juni',
+    'Juli',
+    'Agustus',
+    'September',
+    'Oktober',
+    'November',
+    'Desember',
   ][month - 1];
 
   Widget _filterChip({
@@ -1790,99 +1840,6 @@ class _PresensiScreenState extends State<PresensiScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _historyDetailCard(Presensi item) {
-    final isIzin = item.status == 'izin';
-    final isPulang = item.status == 'pulang' || item.type == 'pulang';
-    final title = isIzin
-        ? 'Izin'
-        : isPulang
-        ? 'Presensi Pulang'
-        : 'Presensi Masuk';
-    final color = isIzin
-        ? const Color(0xFFE28A15)
-        : isPulang
-        ? const Color(0xFFC44B1A)
-        : const Color(0xFF08794D);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE0E7F2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  isIzin ? Icons.event_available_outlined : Icons.fingerprint,
-                  color: color,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      '${_detailDate(item.presensiDate)} • ${_detailTime(item.createdAt)} WIB',
-                      style: const TextStyle(
-                        color: Color(0xFF687386),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const Divider(height: 26),
-          if (item.locationDistanceMeters != null ||
-              item.locationAccuracy != null)
-            Row(
-              children: [
-                const Icon(Icons.location_on_outlined, size: 18, color: _blue),
-                const SizedBox(width: 7),
-                Expanded(
-                  child: Text(
-                    item.locationDistanceMeters == null
-                        ? 'Akurasi GPS: ±${item.locationAccuracy} meter'
-                        : 'Jarak ${item.locationDistanceMeters} meter • Akurasi ±${item.locationAccuracy ?? '-'} meter',
-                    style: const TextStyle(
-                      color: Color(0xFF536176),
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          if (item.note != null && item.note!.trim().isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Text(
-              item.note!,
-              style: const TextStyle(color: Color(0xFF536176), height: 1.35),
-            ),
-          ],
-        ],
-      ),
     );
   }
 
@@ -2302,7 +2259,10 @@ class _PresensiScreenState extends State<PresensiScreen> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Lokasi Saat Ini', style: TextStyle(fontWeight: FontWeight.w700)),
+        const Text(
+          'Lokasi Saat Ini',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
         const SizedBox(height: 10),
         Text(
           status == _LocationStatus.gpsOff || status == _LocationStatus.unknown
