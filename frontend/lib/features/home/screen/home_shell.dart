@@ -27,6 +27,8 @@ class HomeShell extends StatefulWidget {
 }
 
 class _HomeShellState extends State<HomeShell> {
+  int _index = 0;
+
   late Future<ParticipantDashboard> _future;
   late Future<RegistrationStatus> _statusFuture;
 
@@ -323,12 +325,17 @@ class _HomeShellState extends State<HomeShell> {
     );
   }
 
-  void _openPresensi() => Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (_) => PresensiScreen(repository: widget.repository),
-    ),
-  );
-}
+  void _openPresensi() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PresensiScreen(repository: widget.presensiRepository),
+      ),
+    );
+  }
+} // <-- penutup class _HomeShellState
 
 String _date(DateTime value) =>
-    '${const ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'][value.weekday - 1]}, ${value.day} ${const ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][value.month - 1]} ${value.year}';
+    '${const ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'][value.weekday - 1]}, '
+    '${value.day} '
+    '${const ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][value.month - 1]} '
+    '${value.year}';
