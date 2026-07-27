@@ -5,9 +5,10 @@ import '../../dashboard/repository/dashboard_repository.dart';
 import '../../dashboard/repository/registration_status_repository.dart';
 import '../../dashboard/widget/registration_status_card.dart';
 import '../../presensi/repository/presensi_repository.dart';
+import '../../presensi/screen/presensi_screen.dart';
 
-const _primary = Color(0xFF2457D6);
-const _ink = Color(0xFF172033);
+const _blue = Color(0xFF0757D8);
+const _ink = Color(0xFF10213A);
 
 class HomeShell extends StatefulWidget {
   const HomeShell({
@@ -25,6 +26,7 @@ class HomeShell extends StatefulWidget {
 }
 
 class _HomeShellState extends State<HomeShell> {
+  int _index = 0;
   late Future<ParticipantDashboard> _future;
   late Future<RegistrationStatus> _statusFuture;
 
@@ -35,174 +37,298 @@ class _HomeShellState extends State<HomeShell> {
     _statusFuture = widget.registrationStatusRepository.getStatus();
   }
 
-  Future<ParticipantDashboard> _load() => widget.dashboardRepository.getDashboard();
+  Future<ParticipantDashboard> _load() =>
+      widget.dashboardRepository.getDashboard();
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: SafeArea(
-          child: FutureBuilder<ParticipantDashboard>(
-            future: _future,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState != ConnectionState.done) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (snapshot.hasError) return _error();
-              return FutureBuilder<RegistrationStatus>(
-                future: _statusFuture,
-                builder: (context, statusSnap) {
-                  final status = statusSnap.data ?? RegistrationStatus.notRegistered;
-                  return _content(snapshot.requireData, status);
-                },
-              );
-            },
-          ),
-        ),
-        bottomNavigationBar: FutureBuilder<RegistrationStatus>(
-          future: _statusFuture,
-          builder: (context, snap) {
-            final status = snap.data ?? RegistrationStatus.notRegistered;
-            return _bottomNavigation(status);
-          },
-        ),
-      );
-
-  Widget _content(ParticipantDashboard data, RegistrationStatus status) {
-    final today = DateTime.now();
-    final progress = _InternshipProgress.fromDates(
-      DateTime(2026, 6, 1),
-      DateTime(2026, 8, 31),
-      today,
-    );
-    final accepted = status == RegistrationStatus.accepted;
-
-    return RefreshIndicator(
-      onRefresh: () async => setState(() {
-        _future = _load();
-        _statusFuture = widget.registrationStatusRepository.getStatus();
-      }),
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(15, 8, 15, 24),
+    body: SafeArea(
+      child: IndexedStack(
+        index: _index,
         children: [
-          Row(children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: Image.asset('lib/auth/screen/asset/logo.png', width: 32, height: 32, fit: BoxFit.cover),
-            ),
-            const SizedBox(width: 10),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Ruwa Magang', style: TextStyle(fontWeight: FontWeight.w700)), Text(_date(today), style: const TextStyle(fontSize: 10, color: Color(0xFF667085)))])),
-            GestureDetector(
-              onTap: () => _go('/profil'),
-              child: const CircleAvatar(radius: 16, backgroundColor: Color(0xFFD6E4FF), child: Text('P', style: TextStyle(color: _primary, fontWeight: FontWeight.w700))),
-            ),
-          ]),
-          const SizedBox(height: 26),
-          const Text('Dashboard Peserta', style: TextStyle(color: _ink, fontSize: 20, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 5),
-          const Text('Selamat datang kembali di panel monitoring Anda.', style: TextStyle(color: Color(0xFF667085), fontSize: 13)),
-          const SizedBox(height: 20),
-          // Card status pendaftaran — hanya muncul saat not_registered atau pending
-          if (!accepted) RegistrationStatusCard(status: status),
-          const SizedBox(height: 5),
-          Row(children: [
-            _statCard(icon: Icons.book_outlined, label: 'LOGBOOK', value: '${data.logbookCount}', detail: 'Hari ini / total', tint: const Color(0xFFEAE8FF), onTap: () => accepted ? _go('/logbook') : _showLocked()),
-            const SizedBox(width: 12),
-            _statCard(icon: Icons.check_circle_outline, label: 'PRESENSI', value: data.hasPresensiToday ? '1' : '0', detail: 'Kehadiran', tint: const Color(0xFFD7F9E9), onTap: () => accepted ? _go('/presensi') : _showLocked()),
-            const SizedBox(width: 12),
-            _statCard(icon: Icons.workspace_premium_outlined, label: 'SERTIFIKAT', value: '0', detail: 'Diterbitkan', tint: const Color(0xFFFFEAD5), onTap: () => accepted ? _go('/nilai-sertifikat') : _showLocked()),
-          ]),
-          const SizedBox(height: 26),
-          _progressCard(progress),
-          const SizedBox(height: 26),
-          const Text('Aktivitas Terbaru', style: TextStyle(color: _ink, fontSize: 16, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 14),
-          _activity(icon: Icons.visibility_outlined, title: 'Presensi', subtitle: 'Catat kehadiran harian Anda', color: const Color(0xFFEAE8FF), action: Icons.login_rounded, onTap: () => accepted ? _go('/presensi') : _showLocked()),
-          const SizedBox(height: 12),
-          _activity(icon: Icons.edit_note_outlined, title: 'Input Logbook', subtitle: 'Lengkapi aktivitas harian Anda', color: const Color(0xFFE8F6F0), action: Icons.add, onTap: () => accepted ? _go('/logbook') : _showLocked()),
+          _home(),
+          ...List.generate(4, (index) => _comingSoon(index + 1)),
         ],
       ),
-    );
-  }
+    ),
+    bottomNavigationBar: NavigationBar(
+      selectedIndex: _index,
+      onDestinationSelected: (index) => setState(() => _index = index),
+      height: 74,
+      indicatorColor: const Color(0xFFDCE8FF),
+      destinations: const [
+        NavigationDestination(
+          icon: Icon(Icons.home_outlined),
+          selectedIcon: Icon(Icons.home_rounded),
+          label: 'Beranda',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.assignment_outlined),
+          selectedIcon: Icon(Icons.assignment),
+          label: 'Daftar',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.edit_note_outlined),
+          selectedIcon: Icon(Icons.edit_note),
+          label: 'Logbook',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.workspace_premium_outlined),
+          selectedIcon: Icon(Icons.workspace_premium),
+          label: 'Nilai',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.person_outline),
+          selectedIcon: Icon(Icons.person),
+          label: 'Profil',
+        ),
+      ],
+    ),
+  );
 
-  void _showLocked() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Pendaftaran Anda belum disetujui. Fitur ini akan tersedia setelah admin menerima pendaftaran Anda.'),
-        duration: Duration(seconds: 3),
-      ),
-    );
-  }
-
-  Widget _error() => Center(child: Column(mainAxisSize: MainAxisSize.min, children: [const Text('Dashboard belum dapat dimuat.'), const SizedBox(height: 8), FilledButton.icon(onPressed: () => setState(() => _future = _load()), icon: const Icon(Icons.refresh), label: const Text('Coba lagi'))]));
-
-  Widget _statCard({
-    required IconData icon,
-    required String label,
-    required String value,
-    required String detail,
-    required Color tint,
-    required VoidCallback onTap,
-  }) => Expanded(
-    child: Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          height: 120,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            border: Border.all(color: const Color(0xFFE5E7EF)),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: tint, borderRadius: BorderRadius.circular(9)),
-                child: Icon(icon, size: 18, color: _primary),
+  Widget _home() {
+    final now = DateTime.now();
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 30),
+      children: [
+        Row(
+          children: [
+            const CircleAvatar(
+              radius: 23,
+              backgroundColor: Color(0xFFDDE8FF),
+              child: Icon(Icons.person, color: _blue),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Selamat datang,',
+                    style: TextStyle(color: Color(0xFF667085)),
+                  ),
+                  const Text(
+                    'Peserta Magang',
+                    style: TextStyle(
+                      color: _ink,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
               ),
-              const Spacer(),
-              Text(label, style: const TextStyle(fontSize: 8, color: Color(0xFF667085))),
-              Text(value, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
-              Text(detail, style: const TextStyle(fontSize: 8, color: Color(0xFF667085))),
+            ),
+            IconButton(
+              onPressed: () {},
+              icon: const Icon(Icons.notifications_none_rounded, color: _ink),
+            ),
+          ],
+        ),
+        const SizedBox(height: 26),
+        Text(
+          _date(now),
+          style: const TextStyle(color: Color(0xFF687386), fontSize: 14),
+        ),
+        const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(colors: [_blue, Color(0xFF2F73E6)]),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x330757D8),
+                blurRadius: 18,
+                offset: Offset(0, 9),
+              ),
             ],
           ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.fact_check_outlined, color: Colors.white),
+                  SizedBox(width: 9),
+                  Text(
+                    'STATUS PRESENSI HARI INI',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Belum Presensi',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 25,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 5),
+              const Text(
+                'Pastikan presensi Anda tercatat hari ini.',
+                style: TextStyle(color: Colors.white70),
+              ),
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: _openPresensi,
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: _blue,
+                  minimumSize: const Size.fromHeight(50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: const Icon(Icons.fingerprint_rounded),
+                label: const Text(
+                  'Mulai Presensi',
+                  style: TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 30),
+        const Text(
+          'Menu Utama',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: _ink,
+          ),
+        ),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            _quick(Icons.assignment_outlined, 'Daftar', 1),
+            const SizedBox(width: 10),
+            _quick(Icons.edit_note_outlined, 'Logbook', 2),
+            const SizedBox(width: 10),
+            _quick(Icons.workspace_premium_outlined, 'Nilai & Sertifikat', 3),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _quick(IconData icon, String label, int index) => Expanded(
+    child: InkWell(
+      onTap: () => setState(() => _index = index),
+      borderRadius: BorderRadius.circular(14),
+      child: Ink(
+        height: 104,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE2E8F3)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              backgroundColor: const Color(0xFFE5EEFF),
+              child: Icon(icon, color: _blue),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: _ink,
+              ),
+            ),
+          ],
         ),
       ),
     ),
   );
 
-  Widget _progressCard(_InternshipProgress progress) => Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: Colors.white, border: Border.all(color: const Color(0xFFE5E7EF)), borderRadius: BorderRadius.circular(20)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Kemajuan Magang', style: TextStyle(fontWeight: FontWeight.w800, color: _ink)), SizedBox(height: 4), Text('Berdasarkan durasi kontrak', style: TextStyle(fontSize: 10, color: Color(0xFF667085)))])), Text('${progress.percent}%', style: const TextStyle(fontSize: 23, color: _primary)),]), const SizedBox(height: 19), ClipRRect(borderRadius: BorderRadius.circular(10), child: LinearProgressIndicator(value: progress.value, minHeight: 9, backgroundColor: const Color(0xFFE8EDFA), color: _primary)), const SizedBox(height: 17), Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9), decoration: BoxDecoration(color: const Color(0xFFF4F6FF), borderRadius: BorderRadius.circular(10)), child: Row(children: [const Icon(Icons.calendar_today_outlined, size: 14, color: _primary), const SizedBox(width: 6), Expanded(child: Text('Minggu ${progress.week} dari ${progress.totalWeeks}', style: const TextStyle(fontSize: 10, color: Color(0xFF475467)))), Text('${progress.remainingDays} Hari Lagi', style: const TextStyle(fontSize: 10, color: _primary, fontWeight: FontWeight.w700)), const Icon(Icons.arrow_forward, size: 15, color: _primary)]))]));
-
-  Widget _activity({required IconData icon, required String title, required String subtitle, required Color color, required IconData action, required VoidCallback onTap}) => Material(color: Colors.white, borderRadius: BorderRadius.circular(14), child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(14), child: Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(border: Border.all(color: const Color(0xFFE5E7EF)), borderRadius: BorderRadius.circular(14)), child: Row(children: [Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: _primary)), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)), Text(subtitle, style: const TextStyle(color: Color(0xFF667085), fontSize: 10))])), Container(padding: const EdgeInsets.all(9), decoration: BoxDecoration(color: _primary, borderRadius: BorderRadius.circular(10)), child: Icon(action, color: Colors.white, size: 18))]))));
-
-  Widget _bottomNavigation(RegistrationStatus status) {
-    final accepted = status == RegistrationStatus.accepted;
-    return NavigationBar(
-      selectedIndex: 0,
-      indicatorColor: const Color(0xFFD6E4FF),
-      onDestinationSelected: (index) {
-        const lockedIndexes = [2, 3]; // logbook, nilai-sertifikat
-        const routes = ['/dashboard', '/daftar', '/logbook', '/nilai-sertifikat', '/profil'];
-        if (!accepted && lockedIndexes.contains(index)) {
-          _showLocked();
-          return;
-        }
-        _go(routes[index]);
-      },
-      destinations: const [
-        NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Beranda'),
-        NavigationDestination(icon: Icon(Icons.assignment_outlined), label: 'Daftar'),
-        NavigationDestination(icon: Icon(Icons.book_outlined), label: 'Logbook'),
-        NavigationDestination(icon: Icon(Icons.workspace_premium_outlined), label: 'Nilai & Sertif'),
-        NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profil'),
-      ],
+  Widget _comingSoon(int index) {
+    const titles = ['Daftar', 'Logbook', 'Nilai & Sertifikat', 'Profil'];
+    const icons = [
+      Icons.assignment_outlined,
+      Icons.edit_note_outlined,
+      Icons.workspace_premium_outlined,
+      Icons.person_outline,
+    ];
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          const SizedBox(height: 18),
+          Text(
+            titles[index - 1],
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: _ink,
+            ),
+          ),
+          const Spacer(),
+          Container(
+            width: 132,
+            height: 132,
+            decoration: const BoxDecoration(
+              color: Color(0xFFE3EDFF),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icons[index - 1], size: 68, color: _blue),
+          ),
+          const SizedBox(height: 30),
+          const Text(
+            'Coming Soon',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              color: _ink,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Fitur ini sedang dalam tahap pengembangan dan akan segera tersedia.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              height: 1.5,
+              color: Color(0xFF697386),
+            ),
+          ),
+          const SizedBox(height: 30),
+          FilledButton(
+            onPressed: null,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(54),
+              disabledBackgroundColor: const Color(0xFFE5E7EB),
+              disabledForegroundColor: const Color(0xFF98A2B3),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              'Segera Hadir',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+          const Spacer(),
+        ],
+      ),
     );
   }
 
-  void _go(String route) { if (route != '/dashboard') Navigator.pushNamed(context, route); }
+  void _openPresensi() => Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => PresensiScreen(repository: widget.presensiRepository),
+    ),
+  );
 }
 
-class _InternshipProgress { const _InternshipProgress(this.value, this.percent, this.week, this.totalWeeks, this.remainingDays); final double value; final int percent; final int week; final int totalWeeks; final int remainingDays; factory _InternshipProgress.fromDates(DateTime? start, DateTime? end, DateTime now) { if (start == null || end == null || end.isBefore(start)) return const _InternshipProgress(0, 0, 0, 0, 0); final total = end.difference(start).inDays + 1; final passed = now.isBefore(start) ? 0 : now.isAfter(end) ? total : now.difference(start).inDays + 1; return _InternshipProgress(passed / total, ((passed / total) * 100).round(), (passed / 7).ceil(), (total / 7).ceil(), (total - passed).clamp(0, total).toInt()); } }
-String _date(DateTime date) => '${const ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'][date.weekday - 1]}, ${date.day} ${const ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][date.month - 1]} ${date.year}';
+String _date(DateTime value) =>
+    '${const ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'][value.weekday - 1]}, ${value.day} ${const ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][value.month - 1]} ${value.year}';

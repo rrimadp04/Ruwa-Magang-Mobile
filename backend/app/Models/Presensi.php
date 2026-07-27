@@ -17,8 +17,11 @@ class Presensi extends Model
     protected function casts(): array
     {
         return [
-            'presensi_date' => 'date', 'checked_at' => 'datetime',
-            'absence_finalized_at' => 'datetime', 'latitude' => 'float', 'longitude' => 'float',
+            'presensi_date' => 'date',
+            'checked_at' => 'datetime',
+            'absence_finalized_at' => 'datetime',
+            'latitude' => 'float',
+            'longitude' => 'float',
             'location_valid' => 'boolean',
         ];
     }

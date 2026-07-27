@@ -54,9 +54,7 @@ class _RuwaMagangAppState extends State<RuwaMagangApp> {
         if (!snapshot.hasData) {
           return const MaterialApp(
             debugShowCheckedModeBanner: false,
-            home: Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            ),
+            home: Scaffold(body: Center(child: CircularProgressIndicator())),
           );
         }
 
@@ -69,7 +67,9 @@ class _RuwaMagangAppState extends State<RuwaMagangApp> {
           theme: ThemeData(
             useMaterial3: true,
             scaffoldBackgroundColor: const Color(0xFFF7F9FE),
-            colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0757D8)),
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF0757D8),
+            ),
             fontFamily: 'Roboto',
           ),
           home: repositories.isAuthenticated
@@ -84,23 +84,39 @@ class _RuwaMagangAppState extends State<RuwaMagangApp> {
                 ),
           routes: {
             LoginScreen.routeName: (_) => LoginScreen(
-                  repository: repositories.presensi,
-                  onAuthenticated: (token) => _refreshSession(freshToken: token),
-                ),
+              repository: repositories.presensi,
+              onAuthenticated: (token) => _refreshSession(freshToken: token),
+            ),
             RegisterScreen.routeName: (_) => RegisterScreen(
-                  repository: repositories.presensi,
-                  onAuthenticated: (token) => _refreshSession(freshToken: token),
-                ),
+              repository: repositories.presensi,
+              onAuthenticated: (token) => _refreshSession(freshToken: token),
+            ),
             DashboardScreen.routeName: (_) => DashboardScreen(
-                  repository: repositories.presensi,
-                  dashboardRepository: repositories.dashboard,
-                  registrationStatusRepository: repositories.registrationStatus,
-                ),
-            '/presensi': (_) => PresensiScreen(repository: repositories.presensi),
-            '/daftar': (_) => const ParticipantSectionScreen(title: 'Daftar', description: 'Lihat informasi pendaftaran dan penempatan magang Anda.', icon: Icons.assignment_outlined),
-            '/logbook': (_) => const ParticipantSectionScreen(title: 'Logbook', description: 'Catat dan lengkapi aktivitas harian magang Anda.', icon: Icons.edit_note_outlined),
-            '/nilai-sertifikat': (_) => const ParticipantSectionScreen(title: 'Nilai & Sertifikat', description: 'Pantau penilaian dan sertifikat magang yang diterbitkan.', icon: Icons.workspace_premium_outlined),
-            '/profil': (_) => ParticipantProfileScreen(repository: repositories.profile),
+              repository: repositories.presensi,
+              dashboardRepository: repositories.dashboard,
+              registrationStatusRepository: repositories.registrationStatus,
+            ),
+            '/presensi': (_) =>
+                PresensiScreen(repository: repositories.presensi),
+            '/daftar': (_) => const ParticipantSectionScreen(
+              title: 'Daftar',
+              description:
+                  'Lihat informasi pendaftaran dan penempatan magang Anda.',
+              icon: Icons.assignment_outlined,
+            ),
+            '/logbook': (_) => const ParticipantSectionScreen(
+              title: 'Logbook',
+              description: 'Catat dan lengkapi aktivitas harian magang Anda.',
+              icon: Icons.edit_note_outlined,
+            ),
+            '/nilai-sertifikat': (_) => const ParticipantSectionScreen(
+              title: 'Nilai & Sertifikat',
+              description:
+                  'Pantau penilaian dan sertifikat magang yang diterbitkan.',
+              icon: Icons.workspace_premium_outlined,
+            ),
+            '/profil': (_) =>
+                ParticipantProfileScreen(repository: repositories.profile),
           },
         );
       },
@@ -139,10 +155,21 @@ class _RuwaMagangAppState extends State<RuwaMagangApp> {
     }
 
     return _Repositories(
-      PresensiRepository(PresensiService(baseUrl: widget.apiBaseUrl, accessToken: token)),
-      DashboardRepository(DashboardService(baseUrl: widget.apiBaseUrl, accessToken: token)),
-      ProfileRepository(ProfileService(baseUrl: widget.apiBaseUrl, accessToken: token)),
-      RegistrationStatusRepository(RegistrationStatusService(baseUrl: widget.apiBaseUrl, accessToken: token)),
+      PresensiRepository(
+        PresensiService(baseUrl: widget.apiBaseUrl, accessToken: token),
+      ),
+      DashboardRepository(
+        DashboardService(baseUrl: widget.apiBaseUrl, accessToken: token),
+      ),
+      ProfileRepository(
+        ProfileService(baseUrl: widget.apiBaseUrl, accessToken: token),
+      ),
+      RegistrationStatusRepository(
+        RegistrationStatusService(
+          baseUrl: widget.apiBaseUrl,
+          accessToken: token,
+        ),
+      ),
       token.isNotEmpty,
     );
   }
@@ -155,7 +182,13 @@ class _RuwaMagangAppState extends State<RuwaMagangApp> {
 }
 
 class _Repositories {
-  const _Repositories(this.presensi, this.dashboard, this.profile, this.registrationStatus, this.isAuthenticated);
+  const _Repositories(
+    this.presensi,
+    this.dashboard,
+    this.profile,
+    this.registrationStatus,
+    this.isAuthenticated,
+  );
   final PresensiRepository presensi;
   final DashboardRepository dashboard;
   final ProfileRepository profile;
