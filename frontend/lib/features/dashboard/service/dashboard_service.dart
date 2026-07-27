@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../../../core/network/api_client.dart';
+
 class DashboardService {
   DashboardService({required this.baseUrl, required this.accessToken});
 
@@ -28,10 +30,7 @@ class DashboardService {
       response = await http
           .get(
             url,
-            headers: {
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $accessToken',
-            },
+            headers: ApiClient.authenticatedHeaders(accessToken),
           )
           .timeout(const Duration(seconds: 20));
       debugPrint('[DashboardService] Status: ${response.statusCode}');

@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\Mobile\Auth\AuthController;
+use App\Http\Controllers\Api\Mobile\Auth\PasswordResetController;
 use App\Http\Controllers\Api\Mobile\Dashboard\DashboardController;
 use App\Http\Controllers\Api\Mobile\Profile\AccountSettingsController;
 use App\Http\Controllers\Api\PresensiController;
@@ -16,15 +17,11 @@ use App\Http\Controllers\Api\PesertaSertifikatController;
 
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
+Route::post('/forgot-password', [PasswordResetController::class, 'sendOtp']);
+Route::post('/reset-password', [PasswordResetController::class, 'resetWithOtp']);
 Route::get('/peserta/profile/photo/{user}', [AccountSettingsController::class, 'photo']);
 
-// =====================
-// Protected Routes
-// =====================
-
-Route::middleware('api.token')->group(function () {
-
-    // Authentication
+Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Dashboard
@@ -43,7 +40,6 @@ Route::middleware('api.token')->group(function () {
     // =====================
     Route::get('/peserta/presensi/settings', [PresensiController::class, 'settings']);
     Route::post('/peserta/presensi', [PresensiController::class, 'store']);
-
     // =====================
     // Modul Penilaian
     // =====================
@@ -53,5 +49,5 @@ Route::middleware('api.token')->group(function () {
     // =====================
     // Modul Sertifikat
     // =====================
-    Route::get('/peserta/sertifikat', [PesertaSertifikatController::class, 'index']);
+Route::get('/peserta/sertifikat', [PesertaSertifikatController::class, 'index']);
 });

@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../../core/network/api_client.dart';
 class ApiException implements Exception {
   const ApiException(this.message);
   final String message;
@@ -79,17 +80,39 @@ class AuthService {
     return AuthLoginResponse(token: token, user: user);
   }
 
+  /// Requests a six-digit OTP for the password-reset flow.
+  Future<void> sendOtp({required String email}) async {
+    final response = await _post('/forgot-password', {
+      'email': email,
+    });
+
+    _decode(response);
+  }
+
+  /// Resets a password after the OTP sent to the registered email is verified.
+  Future<void> resetPassword({
+    required String email,
+    required String otp,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    final response = await _post('/reset-password', {
+      'email': email,
+      'otp': otp,
+      'password': password,
+      'password_confirmation': passwordConfirmation,
+    });
+
+    _decode(response);
+  }
+
   /// Jika endpoint logout ada, gunakan endpoint ini.
   /// Spec kamu: POST /api/logout dengan header Authorization Bearer TOKEN.
   Future<void> logout({required String token}) async {
     final response = await http
         .post(
           Uri.parse('$baseUrl/logout'),
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
+          headers: ApiClient.authenticatedHeaders(token, json: true),
         )
         .timeout(const Duration(seconds: 12));
 
@@ -110,10 +133,7 @@ class AuthService {
       final response = await http
           .get(
             Uri.parse('$baseUrl/peserta/profile'),
-            headers: {
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
+            headers: ApiClient.authenticatedHeaders(token),
           )
           .timeout(const Duration(seconds: 12));
 

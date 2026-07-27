@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../dashboard/model/participant_dashboard.dart';
 import '../../dashboard/repository/dashboard_repository.dart';
 import '../../dashboard/repository/registration_status_repository.dart';
-import '../../dashboard/service/registration_status_service.dart';
 import '../../dashboard/widget/registration_status_card.dart';
 import '../../presensi/repository/presensi_repository.dart';
 import '../../presensi/screen/presensi_screen.dart';
@@ -27,6 +26,7 @@ class HomeShell extends StatefulWidget {
 }
 
 class _HomeShellState extends State<HomeShell> {
+  int _index = 0;
   late Future<ParticipantDashboard> _future;
   late Future<RegistrationStatus> _statusFuture;
 
@@ -325,7 +325,7 @@ class _HomeShellState extends State<HomeShell> {
 
   void _openPresensi() => Navigator.of(context).push(
     MaterialPageRoute(
-      builder: (_) => PresensiScreen(repository: widget.repository),
+      builder: (_) => PresensiScreen(repository: widget.presensiRepository),
     ),
   );
 }
