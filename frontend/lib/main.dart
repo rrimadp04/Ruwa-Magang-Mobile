@@ -80,16 +80,16 @@ class _RuwaMagangAppState extends State<RuwaMagangApp> {
                 )
               : LoginScreen(
                   repository: repositories.presensi,
-                  onAuthenticated: _refreshSession,
+                  onAuthenticated: (token) => _refreshSession(freshToken: token),
                 ),
           routes: {
             LoginScreen.routeName: (_) => LoginScreen(
               repository: repositories.presensi,
-              onAuthenticated: _refreshSession,
+              onAuthenticated: (token) => _refreshSession(freshToken: token),
             ),
             RegisterScreen.routeName: (_) => RegisterScreen(
               repository: repositories.presensi,
-              onAuthenticated: _refreshSession,
+              onAuthenticated: (token) => _refreshSession(freshToken: token),
             ),
             DashboardScreen.routeName: (_) => DashboardScreen(
               repository: repositories.presensi,
@@ -123,27 +123,35 @@ class _RuwaMagangAppState extends State<RuwaMagangApp> {
     );
   }
 
-  Future<_Repositories> _buildRepositories() async {
+  Future<_Repositories> _buildRepositories({String? freshToken}) async {
     final prefs = await SharedPreferences.getInstance();
-    final storedToken = prefs.getString(AuthRepository.tokenKey) ?? '';
-    var token = AuthRepository.normalizeToken(storedToken);
 
-    // Migrasikan nilai token lama ke format mentah tanpa mengubah sesi atau
-    // alur navigasi aplikasi.
-    if (token.isNotEmpty && token != storedToken) {
+    String token;
+    if (freshToken != null) {
+      // Token baru dari login/register — langsung pakai, tidak perlu validasi
+      // ulang ke server karena baru saja diterbitkan.
+      token = AuthRepository.normalizeToken(freshToken);
       await prefs.setString(AuthRepository.tokenKey, token);
-    }
+    } else {
+      final storedToken = prefs.getString(AuthRepository.tokenKey) ?? '';
+      token = AuthRepository.normalizeToken(storedToken);
 
-    // Keberadaan string token saja bukan bukti sesi masih valid. Validasi
-    // dilakukan sebelum Dashboard dibuat agar token kedaluwarsa/tidak valid
-    // selalu mengarahkan pengguna ke halaman Login.
-    final authRepository = AuthRepository(
-      service: AuthService(baseUrl: widget.apiBaseUrl),
-      prefs: prefs,
-    );
-    if (token.isNotEmpty && !await authRepository.hasValidSession()) {
-      await authRepository.clearToken();
-      token = '';
+      // Migrasikan token lama yang tersimpan dengan awalan "Bearer ".
+      if (token.isNotEmpty && token != storedToken) {
+        await prefs.setString(AuthRepository.tokenKey, token);
+      }
+
+      // Validasi token lama (dari app restart) ke server sekali saja.
+      if (token.isNotEmpty) {
+        final authRepository = AuthRepository(
+          service: AuthService(baseUrl: widget.apiBaseUrl),
+          prefs: prefs,
+        );
+        if (!await authRepository.hasValidSession()) {
+          await authRepository.clearToken();
+          token = '';
+        }
+      }
     }
 
     return _Repositories(
@@ -166,9 +174,9 @@ class _RuwaMagangAppState extends State<RuwaMagangApp> {
     );
   }
 
-  void _refreshSession() {
+  void _refreshSession({String? freshToken}) {
     setState(() {
-      _repositoriesFuture = _buildRepositories();
+      _repositoriesFuture = _buildRepositories(freshToken: freshToken);
     });
   }
 }

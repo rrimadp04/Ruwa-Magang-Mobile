@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../../../core/network/api_client.dart';
+
 class ApiException implements Exception {
   const ApiException(this.message);
   final String message;
@@ -14,11 +16,8 @@ class PresensiService {
   final String accessToken;
   static const _requestTimeout = Duration(seconds: 12);
 
-  Map<String, String> get _headers => {
-    'Accept': 'application/json',
-    'Content-Type': 'application/json',
-    if (accessToken.isNotEmpty) 'Authorization': 'Bearer $accessToken',
-  };
+  Map<String, String> get _headers =>
+      ApiClient.authenticatedHeaders(accessToken, json: true);
 
   Future<List<dynamic>> fetchHistory({DateTime? start, DateTime? end}) async {
     final uri = Uri.parse('$baseUrl/peserta/presensi').replace(queryParameters: {

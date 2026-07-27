@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../../../core/network/api_client.dart';
+
 enum RegistrationStatus { notRegistered, pending, accepted }
 
 class RegistrationStatusService {
@@ -19,10 +21,7 @@ class RegistrationStatusService {
     late http.Response response;
     try {
       response = await http
-          .get(url, headers: {
-            'Accept': 'application/json',
-            'Authorization': 'Bearer $accessToken',
-          })
+          .get(url, headers: ApiClient.authenticatedHeaders(accessToken))
           .timeout(const Duration(seconds: 20));
       debugPrint('[RegistrationStatusService] Status: ${response.statusCode}');
     } on TimeoutException {

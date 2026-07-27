@@ -1,0 +1,2 @@
+import 'package:flutter/material.dart'; import '../model/attachment_model.dart';
+class ActivityPhoto extends StatelessWidget { const ActivityPhoto({super.key,required this.attachment}); final AttachmentModel attachment; @override Widget build(BuildContext context)=>Container(width:88,height:72,decoration:BoxDecoration(color:const Color(0xFFEFF6FF),borderRadius:BorderRadius.circular(12)),child:const Icon(Icons.image_outlined,color:Color(0xFF2563EB))); }

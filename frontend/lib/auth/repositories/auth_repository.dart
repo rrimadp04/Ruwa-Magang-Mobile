@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/network/api_client.dart';
 import '../services/auth_service.dart';
 
 class AuthRepository {
@@ -30,15 +31,7 @@ class AuthRepository {
   }
 
   static String normalizeToken(String token) {
-    var normalized = token.trim();
-
-    // Simpan dan gunakan token tanpa skema otorisasi. Pengulangan dibuat
-    // defensif agar token lama dengan awalan lebih dari sekali tetap pulih.
-    while (normalized.toLowerCase().startsWith('bearer ')) {
-      normalized = normalized.substring('bearer '.length).trim();
-    }
-
-    return normalized;
+    return ApiClient.normalizeToken(token);
   }
 
   Future<void> clearToken() async {
