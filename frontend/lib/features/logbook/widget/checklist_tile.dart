@@ -1,0 +1,2 @@
+import 'package:flutter/material.dart'; import 'logbook_ui.dart';
+class ChecklistTile extends StatelessWidget { const ChecklistTile({super.key,required this.label,required this.checked}); final String label; final bool checked; @override Widget build(BuildContext context)=>Row(children:[Icon(checked?Icons.check_circle_rounded:Icons.circle_outlined,color:checked?logbookSuccess:logbookMuted),const SizedBox(width:10),Text(label,style:const TextStyle(color:logbookInk))]); }
