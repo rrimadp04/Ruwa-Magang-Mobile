@@ -14,6 +14,7 @@ Route::middleware('api.token')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::get('/peserta/dashboard', [DashboardController::class, 'index']);
+    Route::get('/peserta/registration-status', [DashboardController::class, 'registrationStatus']);
     Route::get('/peserta/profile', [DashboardController::class, 'profile']);
     Route::get('/peserta/presensi', [DashboardController::class, 'presensi']);
 

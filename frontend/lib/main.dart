@@ -13,6 +13,8 @@ import 'features/presensi/service/presensi_service.dart';
 import 'features/presensi/screen/presensi_screen.dart';
 import 'features/dashboard/repository/dashboard_repository.dart';
 import 'features/dashboard/service/dashboard_service.dart';
+import 'features/dashboard/repository/registration_status_repository.dart';
+import 'features/dashboard/service/registration_status_service.dart';
 import 'features/dashboard/screen/participant_section_screen.dart';
 import 'features/profile/repository/profile_repository.dart';
 import 'features/profile/screen/participant_profile_screen.dart';
@@ -74,6 +76,7 @@ class _RuwaMagangAppState extends State<RuwaMagangApp> {
               ? DashboardScreen(
                   repository: repositories.presensi,
                   dashboardRepository: repositories.dashboard,
+                  registrationStatusRepository: repositories.registrationStatus,
                 )
               : LoginScreen(
                   repository: repositories.presensi,
@@ -91,6 +94,7 @@ class _RuwaMagangAppState extends State<RuwaMagangApp> {
             DashboardScreen.routeName: (_) => DashboardScreen(
                   repository: repositories.presensi,
                   dashboardRepository: repositories.dashboard,
+                  registrationStatusRepository: repositories.registrationStatus,
                 ),
             '/presensi': (_) => PresensiScreen(repository: repositories.presensi),
             '/daftar': (_) => const ParticipantSectionScreen(title: 'Daftar', description: 'Lihat informasi pendaftaran dan penempatan magang Anda.', icon: Icons.assignment_outlined),
@@ -130,6 +134,7 @@ class _RuwaMagangAppState extends State<RuwaMagangApp> {
       PresensiRepository(PresensiService(baseUrl: widget.apiBaseUrl, accessToken: token)),
       DashboardRepository(DashboardService(baseUrl: widget.apiBaseUrl, accessToken: token)),
       ProfileRepository(ProfileService(baseUrl: widget.apiBaseUrl, accessToken: token)),
+      RegistrationStatusRepository(RegistrationStatusService(baseUrl: widget.apiBaseUrl, accessToken: token)),
       token.isNotEmpty,
     );
   }
@@ -142,9 +147,10 @@ class _RuwaMagangAppState extends State<RuwaMagangApp> {
 }
 
 class _Repositories {
-  const _Repositories(this.presensi, this.dashboard, this.profile, this.isAuthenticated);
+  const _Repositories(this.presensi, this.dashboard, this.profile, this.registrationStatus, this.isAuthenticated);
   final PresensiRepository presensi;
   final DashboardRepository dashboard;
   final ProfileRepository profile;
+  final RegistrationStatusRepository registrationStatus;
   final bool isAuthenticated;
 }
