@@ -2,19 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../../presensi/repository/presensi_repository.dart';
 import '../../presensi/screen/presensi_screen.dart';
-import '../../nilai_sertifikat/screen/nilai_sertifikat_screen.dart';
-import '../../nilai_sertifikat/repository/nilai_repository.dart';
-import '../../logbook/repository/logbook_repository.dart';
-import '../../logbook/screen/list_logbook_screen.dart';
 
 const _blue = Color(0xFF0757D8);
 const _ink = Color(0xFF10213A);
 
 class HomeShell extends StatefulWidget {
-  const HomeShell({super.key, required this.repository, required this.nilaiRepository, required this.logbookRepository});
+  const HomeShell({super.key, required this.repository});
   final PresensiRepository repository;
-  final NilaiRepository nilaiRepository;
-  final LogbookRepository logbookRepository;
 
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -30,10 +24,7 @@ class _HomeShellState extends State<HomeShell> {
         index: _index,
         children: [
           _home(),
-          _comingSoon(1),
-          ListLogbookScreen(repository: widget.logbookRepository),
-          NilaiSertifikatScreen(repository: widget.nilaiRepository),
-          _comingSoon(4),
+          ...List.generate(4, (index) => _comingSoon(index + 1)),
         ],
       ),
     ),
