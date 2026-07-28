@@ -13,7 +13,7 @@ class RegisterScreen extends StatefulWidget {
 
   static const routeName = '/register';
   final PresensiRepository repository;
-  final VoidCallback? onAuthenticated;
+  final void Function(String token)? onAuthenticated;
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -75,7 +75,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       await repository.persistToken(result.token);
       if (!mounted) return;
       if (widget.onAuthenticated != null) {
-        widget.onAuthenticated!();
+        widget.onAuthenticated!(result.token);
       } else {
         Navigator.pushReplacementNamed(context, DashboardScreen.routeName);
       }

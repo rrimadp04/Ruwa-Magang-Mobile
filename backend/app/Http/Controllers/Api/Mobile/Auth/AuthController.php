@@ -7,7 +7,6 @@ use App\Models\Participant;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -60,17 +59,17 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $user = $request->user();
-        $user->forceFill(['api_token' => null])->save();
+        $request->user()?->currentAccessToken()?->delete();
 
         return response()->json(['status' => 'success', 'message' => 'Logout berhasil.']);
     }
 
     private function issueToken(User $user): string
     {
-        $token = Str::random(80);
-        $user->forceFill(['api_token' => $token])->save();
-        return $token;
+        // Personal access token Sanctum disimpan dalam bentuk hash oleh
+        // Laravel. Hanya token teks yang dikembalikan sekali ini yang boleh
+        // disimpan aplikasi dan dikirim sebagai Bearer token.
+        return $user->createToken('mobile-app')->plainTextToken;
     }
 
     private function userPayload(User $user): array

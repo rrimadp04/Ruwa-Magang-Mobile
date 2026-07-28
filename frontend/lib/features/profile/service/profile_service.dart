@@ -3,6 +3,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../../../core/network/api_client.dart';
+
 class ProfileApiException implements Exception {
   const ProfileApiException(this.message);
   final String message;
@@ -27,10 +29,7 @@ class ProfileService {
       response = await http
           .get(
             Uri.parse('$baseUrl/peserta/profile'),
-            headers: {
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $accessToken',
-            },
+            headers: ApiClient.authenticatedHeaders(accessToken),
           )
           .timeout(const Duration(seconds: 20));
     } on TimeoutException {
@@ -74,7 +73,7 @@ class ProfileService {
 
   Future<void> uploadPhoto({required List<int> bytes, required String filename}) async {
     final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/peserta/pengaturan-akun/photo'))
-      ..headers.addAll({'Accept': 'application/json', 'Authorization': 'Bearer $accessToken'})
+      ..headers.addAll(ApiClient.authenticatedHeaders(accessToken))
       ..files.add(http.MultipartFile.fromBytes('photo', bytes, filename: filename));
     try {
       final streamed = await request.send().timeout(const Duration(seconds: 30));
@@ -94,7 +93,7 @@ class ProfileService {
       final response = await http
           .post(
             Uri.parse('$baseUrl$path'),
-            headers: {'Accept': 'application/json', 'Content-Type': 'application/json', 'Authorization': 'Bearer $accessToken'},
+            headers: ApiClient.authenticatedHeaders(accessToken, json: true),
             body: jsonEncode(payload),
           )
           .timeout(const Duration(seconds: 20));

@@ -13,13 +13,16 @@ abstract final class ApiConfig {
     'API_BASE_URL',
   );
 
-  static const String _androidEmulatorBaseUrl =
-      'http://192.168.9.91:8001/api';
+  // Harus menunjuk ke backend yang sama dengan APP_URL pada proyek Laravel.
+  // URL ini dapat ditimpa dengan --dart-define=API_BASE_URL untuk perangkat
+  // atau server development lain.
+  static const String _defaultBaseUrl =
+      'http://192.168.9.168:8001/api';
 
   /// Base URL tunggal yang digunakan seluruh HTTP service.
   static String get baseUrl {
     final configuredUrl = _configuredBaseUrl.trim();
-    final url = configuredUrl.isEmpty ? _androidEmulatorBaseUrl : configuredUrl;
+    final url = configuredUrl.isEmpty ? _defaultBaseUrl : configuredUrl;
     return url.replaceFirst(RegExp(r'/+$'), '');
   }
 }

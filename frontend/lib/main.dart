@@ -16,6 +16,12 @@ import 'features/dashboard/service/dashboard_service.dart';
 import 'features/dashboard/repository/registration_status_repository.dart';
 import 'features/dashboard/service/registration_status_service.dart';
 import 'features/dashboard/screen/participant_section_screen.dart';
+import 'features/logbook/repository/logbook_repository.dart';
+import 'features/logbook/screen/list_logbook_screen.dart';
+import 'features/logbook/service/logbook_service.dart';
+import 'features/nilai_sertifikat/repository/nilai_repository.dart';
+import 'features/nilai_sertifikat/screen/nilai_sertifikat_screen.dart';
+import 'features/nilai_sertifikat/service/nilai_service.dart';
 import 'features/profile/repository/profile_repository.dart';
 import 'features/profile/screen/participant_profile_screen.dart';
 import 'features/profile/service/profile_service.dart';
@@ -54,9 +60,7 @@ class _RuwaMagangAppState extends State<RuwaMagangApp> {
         if (!snapshot.hasData) {
           return const MaterialApp(
             debugShowCheckedModeBanner: false,
-            home: Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            ),
+            home: Scaffold(body: Center(child: CircularProgressIndicator())),
           );
         }
 
@@ -69,7 +73,9 @@ class _RuwaMagangAppState extends State<RuwaMagangApp> {
           theme: ThemeData(
             useMaterial3: true,
             scaffoldBackgroundColor: const Color(0xFFF7F9FE),
-            colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0757D8)),
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF0757D8),
+            ),
             fontFamily: 'Roboto',
           ),
           home: repositories.isAuthenticated
@@ -80,77 +86,122 @@ class _RuwaMagangAppState extends State<RuwaMagangApp> {
                 )
               : LoginScreen(
                   repository: repositories.presensi,
-                  onAuthenticated: _refreshSession,
+                  onAuthenticated: (token) => _refreshSession(freshToken: token),
                 ),
           routes: {
             LoginScreen.routeName: (_) => LoginScreen(
-                  repository: repositories.presensi,
-                  onAuthenticated: _refreshSession,
-                ),
+              repository: repositories.presensi,
+              onAuthenticated: (token) => _refreshSession(freshToken: token),
+            ),
             RegisterScreen.routeName: (_) => RegisterScreen(
-                  repository: repositories.presensi,
-                  onAuthenticated: _refreshSession,
-                ),
+              repository: repositories.presensi,
+              onAuthenticated: (token) => _refreshSession(freshToken: token),
+            ),
             DashboardScreen.routeName: (_) => DashboardScreen(
-                  repository: repositories.presensi,
-                  dashboardRepository: repositories.dashboard,
-                  registrationStatusRepository: repositories.registrationStatus,
-                ),
-            '/presensi': (_) => PresensiScreen(repository: repositories.presensi),
-            '/daftar': (_) => const ParticipantSectionScreen(title: 'Daftar', description: 'Lihat informasi pendaftaran dan penempatan magang Anda.', icon: Icons.assignment_outlined),
-            '/logbook': (_) => const ParticipantSectionScreen(title: 'Logbook', description: 'Catat dan lengkapi aktivitas harian magang Anda.', icon: Icons.edit_note_outlined),
-            '/nilai-sertifikat': (_) => const ParticipantSectionScreen(title: 'Nilai & Sertifikat', description: 'Pantau penilaian dan sertifikat magang yang diterbitkan.', icon: Icons.workspace_premium_outlined),
-            '/profil': (_) => ParticipantProfileScreen(repository: repositories.profile),
+              repository: repositories.presensi,
+              dashboardRepository: repositories.dashboard,
+              registrationStatusRepository: repositories.registrationStatus,
+            ),
+            '/presensi': (_) =>
+                PresensiScreen(repository: repositories.presensi),
+            '/daftar': (_) => const ParticipantSectionScreen(
+              title: 'Daftar',
+              description:
+                  'Lihat informasi pendaftaran dan penempatan magang Anda.',
+              icon: Icons.assignment_outlined,
+            ),
+            '/logbook': (_) =>
+                ListLogbookScreen(repository: repositories.logbook),
+            '/nilai-sertifikat': (_) => NilaiSertifikatScreen(
+              repository: repositories.nilaiSertifikat,
+            ),
+            '/profil': (_) =>
+                ParticipantProfileScreen(repository: repositories.profile),
           },
         );
       },
     );
   }
 
-  Future<_Repositories> _buildRepositories() async {
+  Future<_Repositories> _buildRepositories({String? freshToken}) async {
     final prefs = await SharedPreferences.getInstance();
-    final storedToken = prefs.getString(AuthRepository.tokenKey) ?? '';
-    var token = AuthRepository.normalizeToken(storedToken);
 
-    // Migrasikan nilai token lama ke format mentah tanpa mengubah sesi atau
-    // alur navigasi aplikasi.
-    if (token.isNotEmpty && token != storedToken) {
+    String token;
+    if (freshToken != null) {
+      // Token baru dari login/register — langsung pakai, tidak perlu validasi
+      // ulang ke server karena baru saja diterbitkan.
+      token = AuthRepository.normalizeToken(freshToken);
       await prefs.setString(AuthRepository.tokenKey, token);
-    }
+    } else {
+      final storedToken = prefs.getString(AuthRepository.tokenKey) ?? '';
+      token = AuthRepository.normalizeToken(storedToken);
 
-    // Keberadaan string token saja bukan bukti sesi masih valid. Validasi
-    // dilakukan sebelum Dashboard dibuat agar token kedaluwarsa/tidak valid
-    // selalu mengarahkan pengguna ke halaman Login.
-    final authRepository = AuthRepository(
-      service: AuthService(baseUrl: widget.apiBaseUrl),
-      prefs: prefs,
-    );
-    if (token.isNotEmpty && !await authRepository.hasValidSession()) {
-      await authRepository.clearToken();
-      token = '';
+      // Migrasikan token lama yang tersimpan dengan awalan "Bearer ".
+      if (token.isNotEmpty && token != storedToken) {
+        await prefs.setString(AuthRepository.tokenKey, token);
+      }
+
+      // Validasi token lama (dari app restart) ke server sekali saja.
+      if (token.isNotEmpty) {
+        final authRepository = AuthRepository(
+          service: AuthService(baseUrl: widget.apiBaseUrl),
+          prefs: prefs,
+        );
+        if (!await authRepository.hasValidSession()) {
+          await authRepository.clearToken();
+          token = '';
+        }
+      }
     }
 
     return _Repositories(
-      PresensiRepository(PresensiService(baseUrl: widget.apiBaseUrl, accessToken: token)),
-      DashboardRepository(DashboardService(baseUrl: widget.apiBaseUrl, accessToken: token)),
-      ProfileRepository(ProfileService(baseUrl: widget.apiBaseUrl, accessToken: token)),
-      RegistrationStatusRepository(RegistrationStatusService(baseUrl: widget.apiBaseUrl, accessToken: token)),
+      PresensiRepository(
+        PresensiService(baseUrl: widget.apiBaseUrl, accessToken: token),
+      ),
+      DashboardRepository(
+        DashboardService(baseUrl: widget.apiBaseUrl, accessToken: token),
+      ),
+      ProfileRepository(
+        ProfileService(baseUrl: widget.apiBaseUrl, accessToken: token),
+      ),
+      RegistrationStatusRepository(
+        RegistrationStatusService(
+          baseUrl: widget.apiBaseUrl,
+          accessToken: token,
+        ),
+      ),
+      LogbookRepository(
+        LogbookService(baseUrl: widget.apiBaseUrl, accessToken: token),
+      ),
+      NilaiRepository(
+        NilaiService(baseUrl: widget.apiBaseUrl, accessToken: token),
+      ),
       token.isNotEmpty,
     );
   }
 
-  void _refreshSession() {
+  void _refreshSession({String? freshToken}) {
     setState(() {
-      _repositoriesFuture = _buildRepositories();
+      _repositoriesFuture = _buildRepositories(freshToken: freshToken);
     });
   }
 }
 
 class _Repositories {
-  const _Repositories(this.presensi, this.dashboard, this.profile, this.registrationStatus, this.isAuthenticated);
+  const _Repositories(
+    this.presensi,
+    this.dashboard,
+    this.profile,
+    this.registrationStatus,
+    this.logbook,
+    this.nilaiSertifikat,
+    this.isAuthenticated,
+  );
   final PresensiRepository presensi;
   final DashboardRepository dashboard;
   final ProfileRepository profile;
   final RegistrationStatusRepository registrationStatus;
+  final LogbookRepository logbook;
+  final NilaiRepository nilaiSertifikat;
   final bool isAuthenticated;
 }
