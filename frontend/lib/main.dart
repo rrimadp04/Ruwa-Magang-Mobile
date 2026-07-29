@@ -50,7 +50,9 @@ class _RuwaMagangAppState extends State<RuwaMagangApp> {
   @override
   void initState() {
     super.initState();
-    _repositoriesFuture = _buildRepositories();
+    // Setiap aplikasi dijalankan dari awal, tampilkan Login terlebih dahulu.
+    // Token lama tidak boleh langsung membuka Dashboard.
+    _repositoriesFuture = _buildRepositories(forceLogin: true);
   }
 
   @override
@@ -127,11 +129,14 @@ class _RuwaMagangAppState extends State<RuwaMagangApp> {
     );
   }
 
-  Future<_Repositories> _buildRepositories({String? freshToken}) async {
+  Future<_Repositories> _buildRepositories({String? freshToken, bool forceLogin = false}) async {
     final prefs = await SharedPreferences.getInstance();
 
     String token;
-    if (freshToken != null) {
+    if (forceLogin) {
+      await prefs.remove(AuthRepository.tokenKey);
+      token = '';
+    } else if (freshToken != null) {
       // Token baru dari login/register — langsung pakai, tidak perlu validasi
       // ulang ke server karena baru saja diterbitkan.
       token = AuthRepository.normalizeToken(freshToken);
@@ -184,10 +189,12 @@ class _RuwaMagangAppState extends State<RuwaMagangApp> {
     );
   }
 
-  void _refreshSession({String? freshToken}) {
+  Future<void> _refreshSession({String? freshToken}) async {
+    final repositoriesFuture = _buildRepositories(freshToken: freshToken);
     setState(() {
-      _repositoriesFuture = _buildRepositories(freshToken: freshToken);
+      _repositoriesFuture = repositoriesFuture;
     });
+    await repositoriesFuture;
   }
 }
 

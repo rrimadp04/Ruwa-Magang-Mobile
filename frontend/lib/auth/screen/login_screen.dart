@@ -15,7 +15,7 @@ class LoginScreen extends StatefulWidget {
 
   static const routeName = '/login';
   final PresensiRepository repository;
-  final void Function(String token)? onAuthenticated;
+  final Future<void> Function(String token)? onAuthenticated;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -65,7 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
       if (widget.onAuthenticated != null) {
-        widget.onAuthenticated!(result.token);
+        await widget.onAuthenticated!(result.token);
       } else {
         Navigator.pushReplacementNamed(context, DashboardScreen.routeName);
       }

@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../core/network/api_client.dart';
+
 class ApiException implements Exception {
   const ApiException(this.message);
   final String message;
@@ -40,8 +42,9 @@ class AuthService {
 
     final body = _decode(response);
 
-    final token = body['data']?['token']?.toString() ?? '';
-    final user = (body['data']?['user'] as Map?)?.cast<String, dynamic>() ?? {};
+    final data = _dataFrom(body);
+    final token = data['token']?.toString() ?? '';
+    final user = (data['user'] as Map?)?.cast<String, dynamic>() ?? {};
 
     if (token.isEmpty) {
       throw const ApiException('Token tidak ditemukan dari respons server.');
@@ -70,8 +73,9 @@ class AuthService {
     });
 
     final body = _decode(response);
-    final token = body['data']?['token']?.toString() ?? '';
-    final user = (body['data']?['user'] as Map?)?.cast<String, dynamic>() ?? {};
+    final data = _dataFrom(body);
+    final token = data['token']?.toString() ?? '';
+    final user = (data['user'] as Map?)?.cast<String, dynamic>() ?? {};
 
     if (token.isEmpty) {
       throw const ApiException('Token tidak ditemukan dari respons server.');
@@ -153,12 +157,30 @@ class AuthService {
   }
 
   Map<String, dynamic> _decode(http.Response response) {
-    Map<String, dynamic> body = {};
+    // Log payload mentah agar respons HTML (misalnya error proxy/Laravel)
+    // tidak lagi tersamarkan sebagai kegagalan parsing umum.
+    debugPrint('[AuthService] HTTP ${response.statusCode} '
+        '${response.request?.method ?? ''} ${response.request?.url ?? ''}');
+    debugPrint('[AuthService] Response body: ${response.body}');
+
+    final Object? decoded;
     try {
-      body = jsonDecode(response.body) as Map<String, dynamic>;
-    } catch (_) {
-      throw const ApiException('Respons server tidak dapat diproses.');
+      decoded = jsonDecode(response.body);
+    } on FormatException {
+      throw ApiException(
+        'Respons server tidak valid (HTTP ${response.statusCode}). '
+        'Periksa log respons API.',
+      );
     }
+
+    if (decoded is! Map) {
+      throw ApiException(
+        'Format respons server tidak valid (HTTP ${response.statusCode}). '
+        'Periksa log respons API.',
+      );
+    }
+
+    final body = Map<String, dynamic>.from(decoded);
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException((body['message'] ?? 'Permintaan gagal.').toString());
@@ -169,6 +191,11 @@ class AuthService {
     }
 
     return body;
+  }
+
+  Map<String, dynamic> _dataFrom(Map<String, dynamic> body) {
+    final data = body['data'];
+    return data is Map ? Map<String, dynamic>.from(data) : const {};
   }
 
   Future<http.Response> _post(String path, Map<String, dynamic> payload) async {
