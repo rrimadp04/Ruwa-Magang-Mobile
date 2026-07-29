@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\Mobile\Dashboard\DashboardController;
 use App\Http\Controllers\Api\Mobile\Profile\AccountSettingsController;
 use App\Http\Controllers\Api\Mobile\OPD\OpdController;
 use App\Http\Controllers\Api\Mobile\Pendaftaran\PendaftaranController;
+use App\Http\Controllers\Api\Mobile\LogbookController;
 use App\Http\Controllers\Api\PresensiController;
 use App\Http\Controllers\Api\PesertaPenilaianController;
 use App\Http\Controllers\Api\PesertaSertifikatController;
@@ -24,8 +25,12 @@ Route::get('/opd',       [OpdController::class, 'index']);
 Route::get('/opd/{id}',  [OpdController::class, 'show']);
 
 // ── Authenticated ─────────────────────────────────────────────────────────────
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('api.token')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/peserta/logbooks', [LogbookController::class, 'index']);
+    Route::post('/peserta/logbooks', [LogbookController::class, 'store']);
+    Route::put('/peserta/logbooks/{logbook}', [LogbookController::class, 'update']);
+    Route::delete('/peserta/logbooks/{logbook}', [LogbookController::class, 'destroy']);
 
     // Dashboard
     Route::get('/peserta/dashboard',           [DashboardController::class, 'index']);

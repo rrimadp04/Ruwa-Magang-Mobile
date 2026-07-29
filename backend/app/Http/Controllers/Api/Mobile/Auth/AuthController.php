@@ -7,6 +7,8 @@ use App\Models\Participant;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -45,7 +47,11 @@ class AuthController extends Controller
                 'password' => Hash::make($validated['password']),
             ]);
 
-            if ($user->role === 'peserta') {
+            // Database yang dipakai saat ini tidak memiliki tabel
+            // participants. Akun peserta tetap dapat didaftarkan karena data
+            // dasar tersimpan pada users; data pendaftaran akan tersimpan
+            // saat pengguna mengisi formulir pendaftaran.
+            if ($user->role === 'peserta' && Schema::hasTable('participants')) {
                 Participant::create(['user_id' => $user->id, 'status' => 'pending']);
             }
 
@@ -59,17 +65,19 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $request->user()?->currentAccessToken()?->delete();
+        $request->user()?->forceFill(['api_token' => null])->save();
 
         return response()->json(['status' => 'success', 'message' => 'Logout berhasil.']);
     }
 
     private function issueToken(User $user): string
     {
-        // Personal access token Sanctum disimpan dalam bentuk hash oleh
-        // Laravel. Hanya token teks yang dikembalikan sekali ini yang boleh
-        // disimpan aplikasi dan dikirim sebagai Bearer token.
-        return $user->createToken('mobile-app')->plainTextToken;
+        // Token disimpan pada kolom users.api_token yang sudah tersedia,
+        // jadi autentikasi mobile tidak memerlukan tabel Sanctum.
+        $token = Str::random(80);
+        $user->forceFill(['api_token' => $token])->save();
+
+        return $token;
     }
 
     private function userPayload(User $user): array

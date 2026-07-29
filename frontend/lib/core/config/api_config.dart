@@ -1,10 +1,10 @@
 /// Konfigurasi endpoint API aplikasi.
 ///
-/// Android Emulator memakai alamat host khusus `10.0.2.2` secara default.
-/// Untuk perangkat fisik (atau environment lain), berikan URL saat menjalankan
+/// Perangkat fisik memakai alamat LAN backend website secara default.
+/// Untuk Android Emulator atau environment lain, berikan URL saat menjalankan
 /// atau membangun aplikasi, misalnya:
 ///
-/// flutter run --dart-define=API_BASE_URL=http://192.168.9.168:8001/api
+/// flutter run --dart-define=API_BASE_URL=http://10.0.2.2/api
 ///
 /// Nilai dari `--dart-define` sengaja tidak disimpan di source code agar IP
 /// jaringan development tidak perlu diubah di banyak file atau dikomit.
@@ -17,7 +17,7 @@ abstract final class ApiConfig {
   // URL ini dapat ditimpa dengan --dart-define=API_BASE_URL untuk perangkat
   // atau server development lain.
   static const String _defaultBaseUrl =
-      'http://192.168.9.168:8001/api';
+      'http://192.168.18.69:8001/api';
 
   /// Base URL tunggal yang digunakan seluruh HTTP service.
   static String get baseUrl {

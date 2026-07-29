@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Api\Mobile\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Models\Logbook;
+use App\Models\Pendaftaran;
 use App\Models\Presensi;
+use App\Models\Sertifikat;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
@@ -15,20 +18,28 @@ class DashboardController extends Controller
     public function profile(Request $request)
     {
         $user = $request->user();
-        $participant = $user->participant;
-        $isDummyProfile = ! $participant || $participant->status === 'pending';
+        $participant = $this->participantFor($user);
+        $pendaftaran = $this->registrationFor($user);
+        $status = $pendaftaran?->status ?? $participant?->status ?? 'pending';
+        $statusLabel = match ($status) {
+            'accepted', 'aktif' => 'Aktif Magang',
+            'pending' => 'Menunggu Persetujuan',
+            'rejected', 'ditolak' => 'Ditolak',
+            'selesai' => 'Selesai',
+            default => ucfirst($status),
+        };
 
         // TODO: Ganti fallback berikut dengan query profil/penempatan magang
         // setelah tabel peserta menyimpan NIM, jurusan, OPD, tanggal mulai,
         // dan tanggal selesai magang.
         $peserta = [
-            'id' => $participant?->id ?? 0,
-            'nim_nisn' => $isDummyProfile ? '2315061043' : null,
-            'sekolah_kampus' => $user->university ?: 'Universitas Lampung',
-            'jurusan' => $isDummyProfile ? 'Teknik Informatika' : null,
-            'status' => $isDummyProfile ? 'aktif' : $participant->status,
-            'start_date' => $isDummyProfile ? '2026-06-01' : null,
-            'end_date' => $isDummyProfile ? '2026-08-31' : null,
+            'id' => $participant?->id ?? $pendaftaran?->id ?? 0,
+            'nim_nisn' => '-',
+            'sekolah_kampus' => $pendaftaran?->university ?? $user->university ?? '-',
+            'jurusan' => $pendaftaran?->prodi ?? '-',
+            'status' => $status,
+            'start_date' => $pendaftaran?->start_date?->toDateString(),
+            'end_date' => $pendaftaran?->end_date?->toDateString(),
         ];
 
         return response()->json([
@@ -39,10 +50,14 @@ class DashboardController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'role' => $user->role,
-                    'status' => $peserta['status'],
+                    'status' => $status,
                 ],
                 'peserta' => $peserta,
-                'opd' => null,
+                'status_label' => $statusLabel,
+                'opd' => $pendaftaran?->opd ? [
+                    'id' => $pendaftaran->opd->id,
+                    'nama_opd' => $pendaftaran->opd->nama_opd ?? $pendaftaran->opd->name,
+                ] : null,
                 // Gunakan endpoint API agar gambar dapat diakses Flutter Web
                 // dengan header CORS yang sama seperti endpoint profil.
                 'photo_url' => $user->photo
@@ -97,9 +112,15 @@ class DashboardController extends Controller
      */
     public function registrationStatus(Request $request)
     {
-        $participant = $request->user()->participant;
+        $user = $request->user();
+        $participant = $this->participantFor($user);
+        $pendaftaran = $this->registrationFor($user);
 
-        if (! $participant) {
+        if ($pendaftaran) {
+            $status = in_array($pendaftaran->status, ['accepted', 'aktif'], true)
+                ? 'accepted'
+                : ($pendaftaran->status === 'pending' ? 'pending' : 'not_registered');
+        } elseif (! $participant) {
             $status = 'not_registered';
         } elseif ($participant->status === 'aktif' || $participant->status === 'accepted') {
             $status = 'accepted';
@@ -118,9 +139,11 @@ class DashboardController extends Controller
      */
     private function guardAccepted(Request $request): ?\Illuminate\Http\JsonResponse
     {
-        $participant = $request->user()->participant;
-        $accepted = $participant &&
-            in_array($participant->status, ['aktif', 'accepted'], true);
+        $user = $request->user();
+        $participant = $this->participantFor($user);
+        $pendaftaran = $this->registrationFor($user);
+        $accepted = ($pendaftaran && in_array($pendaftaran->status, ['aktif', 'accepted'], true)) ||
+            ($participant && in_array($participant->status, ['aktif', 'accepted'], true));
 
         if (! $accepted) {
             return response()->json([
@@ -140,7 +163,8 @@ class DashboardController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Dashboard ini hanya untuk peserta magang.'], 403);
         }
 
-        $status = $user->participant?->status ?? 'pending';
+        $status = $this->registrationFor($user)?->status ?? $this->participantFor($user)?->status ?? 'pending';
+        $pendaftaran = $this->registrationFor($user);
         $statusLabel = match ($status) {
             'aktif' => 'Aktif',
             'selesai' => 'Selesai',
@@ -152,11 +176,41 @@ class DashboardController extends Controller
             'status' => 'success',
             'data' => [
                 'status_label' => $statusLabel,
-                'has_presensi_today' => Presensi::where('user_id', $user->id)
-                    ->whereDate('presensi_date', today())
-                    ->exists(),
-                'logbook_count' => Logbook::where('user_id', $user->id)->count(),
+                'has_presensi_today' => $this->hasUserColumn('presensis') && Presensi::where('user_id', $user->id)
+                    ->whereDate('presensi_date', today())->exists(),
+                'presensi_count' => $this->hasUserColumn('presensis')
+                    ? Presensi::where('user_id', $user->id)->count()
+                    : 0,
+                'logbook_count' => $this->hasUserColumn('logbooks')
+                    ? Logbook::where('user_id', $user->id)->count()
+                    : 0,
+                'sertifikat_count' => $this->hasUserColumn('sertifikats')
+                    ? Sertifikat::where('user_id', $user->id)->count()
+                    : 0,
+                'start_date' => $pendaftaran?->start_date?->toDateString(),
+                'end_date' => $pendaftaran?->end_date?->toDateString(),
             ],
         ]);
+    }
+
+    /**
+     * Database lama tidak memiliki tabel participants. Profil tetap dapat
+     * memakai data users tanpa membuat tabel baru.
+     */
+    private function participantFor($user): ?\App\Models\Participant
+    {
+        return Schema::hasTable('participants') ? $user->participant : null;
+    }
+
+    private function registrationFor($user): ?Pendaftaran
+    {
+        return Schema::hasTable('pendaftarans')
+            ? Pendaftaran::with('opd')->where('user_id', $user->id)->latest()->first()
+            : null;
+    }
+
+    private function hasUserColumn(string $table): bool
+    {
+        return Schema::hasTable($table) && Schema::hasColumn($table, 'user_id');
     }
 }
