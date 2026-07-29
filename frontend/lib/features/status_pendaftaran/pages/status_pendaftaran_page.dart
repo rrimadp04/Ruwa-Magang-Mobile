@@ -1,6 +1,12 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../profile/screen/guide_screen.dart';
+import 'file_opener_stub.dart'
+    if (dart.library.html) 'file_opener_web.dart';
 
 class StatusPendaftaranPage extends StatelessWidget {
   const StatusPendaftaranPage({
@@ -10,8 +16,14 @@ class StatusPendaftaranPage extends StatelessWidget {
     required this.bidang,
     this.prodi,
     this.cvName,
+    this.cvPath,
+    this.cvBytes,
     this.transkripName,
+    this.transkripPath,
+    this.transkripBytes,
     this.suratName,
+    this.suratPath,
+    this.suratBytes,
     this.tanggalMulai,
     this.tanggalSelesai,
     this.alasanPenolakan,
@@ -23,8 +35,14 @@ class StatusPendaftaranPage extends StatelessWidget {
   final String bidang;
   final String? prodi;
   final String? cvName;
+  final String? cvPath;
+  final Uint8List? cvBytes;
   final String? transkripName;
+  final String? transkripPath;
+  final Uint8List? transkripBytes;
   final String? suratName;
+  final String? suratPath;
+  final Uint8List? suratBytes;
   final DateTime? tanggalMulai;
   final DateTime? tanggalSelesai;
   final String? alasanPenolakan;
@@ -37,6 +55,57 @@ class StatusPendaftaranPage extends StatelessWidget {
     if (d == null) return '-';
     const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
     return '${d.day.toString().padLeft(2,'0')} ${months[d.month-1]} ${d.year}';
+  }
+
+  String _mimeType(String? name) {
+    if (name == null) return 'application/octet-stream';
+    final ext = name.split('.').last.toLowerCase();
+    if (ext == 'pdf') return 'application/pdf';
+    if (ext == 'doc') return 'application/msword';
+    return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  }
+
+  Future<void> _openFile(
+    BuildContext context,
+    String? name,
+    String? path,
+    Uint8List? bytes,
+  ) async {
+    if (kIsWeb) {
+      if (bytes == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('File tidak tersedia untuk dibuka')),
+        );
+        return;
+      }
+      openFileWeb(bytes, name ?? 'dokumen', _mimeType(name));
+      return;
+    }
+
+    // Mobile / Desktop
+    String? filePath = path;
+    if (filePath == null && bytes != null) {
+      final dir = await getTemporaryDirectory();
+      final tmp = File('${dir.path}/${name ?? 'dokumen'}');
+      await tmp.writeAsBytes(bytes);
+      filePath = tmp.path;
+    }
+
+    if (filePath == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('File tidak tersedia untuk dibuka')),
+        );
+      }
+      return;
+    }
+
+    final result = await OpenFilex.open(filePath);
+    if (result.type != ResultType.done && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Tidak dapat membuka file: ${result.message}')),
+      );
+    }
   }
 
   @override
@@ -63,7 +132,6 @@ class StatusPendaftaranPage extends StatelessWidget {
     body: ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
       children: [
-        // Banner notifikasi
         Container(
           margin: const EdgeInsets.only(top: 12, bottom: 4),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -96,7 +164,6 @@ class StatusPendaftaranPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 20),
-        // Ikon status
         Center(
           child: Container(
             width: 80, height: 80,
@@ -123,7 +190,6 @@ class StatusPendaftaranPage extends StatelessWidget {
           style: const TextStyle(color: AppColors.grey, fontSize: 13, height: 1.5),
         ),
         const SizedBox(height: 20),
-        // Alasan penolakan
         if (!_berhasil) ...[
           Container(
             padding: const EdgeInsets.all(16),
@@ -135,10 +201,7 @@ class StatusPendaftaranPage extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 4, height: 60,
-                  decoration: BoxDecoration(color: AppColors.error, borderRadius: BorderRadius.circular(4)),
-                ),
+                Container(width: 4, height: 60, decoration: BoxDecoration(color: AppColors.error, borderRadius: BorderRadius.circular(4))),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -168,7 +231,6 @@ class StatusPendaftaranPage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
         ],
-        // Info card
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -290,7 +352,6 @@ class StatusPendaftaranPage extends StatelessWidget {
             ],
           ),
         ),
-        // Berkas terunggah
         if (_berhasil) ...[
           const SizedBox(height: 12),
           Container(
@@ -305,11 +366,11 @@ class StatusPendaftaranPage extends StatelessWidget {
               children: [
                 const Text('BERKAS TERUNGGAH', style: TextStyle(color: AppColors.grey, fontSize: 11, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 12),
-                _berkasItem(Icons.description_outlined, 'Curriculum Vitae (CV)', cvName != null ? 'PDF • ${cvName!}' : 'PDF • 1.2 MB'),
+                _berkasItem(context, Icons.description_outlined, 'Curriculum Vitae (CV)', cvName ?? 'cv.pdf', cvPath, cvBytes),
                 const Divider(height: 16),
-                _berkasItem(Icons.receipt_long_outlined, 'Transkrip Nilai', transkripName != null ? 'PDF • ${transkripName!}' : 'PDF • 850 KB'),
+                _berkasItem(context, Icons.receipt_long_outlined, 'Transkrip Nilai', transkripName ?? 'transkrip.pdf', transkripPath, transkripBytes),
                 const Divider(height: 16),
-                _berkasItem(Icons.mail_outline, 'Surat Pengantar Kampus', suratName != null ? 'PDF • ${suratName!}' : 'PDF • 520 KB'),
+                _berkasItem(context, Icons.mail_outline, 'Surat Pengantar Kampus', suratName ?? 'surat_pengantar.pdf', suratPath, suratBytes),
               ],
             ),
           ),
@@ -337,7 +398,6 @@ class StatusPendaftaranPage extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 20),
-        // Tombol Kembali ke Beranda
         FilledButton.icon(
           onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
           icon: const Icon(Icons.home_outlined, size: 18),
@@ -349,11 +409,9 @@ class StatusPendaftaranPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 10),
-        // Tombol kedua — Lihat Panduan Magang (berhasil) atau Cari Lowongan Lain (ditolak)
         OutlinedButton.icon(
           onPressed: () {
             if (_berhasil) {
-              // Navigasi ke GuideScreen dari modul profile
               Navigator.push(context, MaterialPageRoute(builder: (_) => const GuideScreen()));
             } else {
               Navigator.of(context).popUntil((r) => r.isFirst);
@@ -382,26 +440,43 @@ class StatusPendaftaranPage extends StatelessWidget {
     bottomNavigationBar: _bottomNav(),
   );
 
-  Widget _berkasItem(IconData icon, String nama, String ukuran) => Row(
-    children: [
-      Container(
-        width: 36, height: 36,
-        decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(8)),
-        child: Icon(icon, color: AppColors.primary, size: 18),
-      ),
-      const SizedBox(width: 12),
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _berkasItem(
+    BuildContext context,
+    IconData icon,
+    String nama,
+    String fileName,
+    String? filePath,
+    Uint8List? fileBytes,
+  ) {
+    final canOpen = filePath != null || fileBytes != null;
+    return InkWell(
+      onTap: canOpen ? () => _openFile(context, fileName, filePath, fileBytes) : null,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
           children: [
-            Text(nama, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.ink)),
-            Text(ukuran, style: const TextStyle(color: AppColors.grey, fontSize: 11)),
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(8)),
+              child: Icon(icon, color: AppColors.primary, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(nama, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.ink)),
+                  Text(fileName, style: const TextStyle(color: AppColors.grey, fontSize: 11), overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+            Icon(Icons.open_in_new, size: 18, color: canOpen ? AppColors.primary : AppColors.grey),
           ],
         ),
       ),
-      const Icon(Icons.open_in_new, size: 18, color: AppColors.primary),
-    ],
-  );
+    );
+  }
 
   Widget _bottomNav() => NavigationBar(
     selectedIndex: _berhasil ? 1 : 0,

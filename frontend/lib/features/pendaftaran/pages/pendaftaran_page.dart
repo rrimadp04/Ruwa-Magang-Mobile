@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../opd/models/opd_model.dart';
 import '../../status_pendaftaran/pages/status_pendaftaran_page.dart';
@@ -20,13 +22,22 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
 
   OpdModel? _selectedOpd;
   String? _selectedBidang;
+
   String? _cvName;
+  String? _cvPath;
+  Uint8List? _cvBytes;
+
   String? _transkripName;
+  String? _transkripPath;
+  Uint8List? _transkripBytes;
+
   String? _suratName;
+  String? _suratPath;
+  Uint8List? _suratBytes;
+
   DateTime? _tanggalMulai;
   DateTime? _tanggalSelesai;
 
-  // OPD yang ditampilkan di dropdown (10 default, bisa difilter)
   List<OpdModel> _opdSuggestions = kDefaultOpds;
   bool _showOpdDropdown = false;
 
@@ -45,7 +56,6 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
     if (q.isEmpty) {
       setState(() => _opdSuggestions = kDefaultOpds);
     } else {
-      // Filter dari semua OPD dummy (fallback) atau tampilkan semua yang cocok
       final all = [...kDefaultOpds, ...dummyOpds];
       final unique = <int, OpdModel>{};
       for (final o in all) { unique[o.id] = o; }
@@ -71,11 +81,10 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
     final firstDate = isMulai
         ? todayOnly
         : (_tanggalMulai != null ? _tanggalMulai!.add(const Duration(days: 1)) : todayOnly);
-    final initialDate = firstDate;
 
     final picked = await showDatePicker(
       context: context,
-      initialDate: initialDate,
+      initialDate: firstDate,
       firstDate: firstDate,
       lastDate: DateTime(2030),
     );
@@ -98,30 +107,57 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
     return '${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}/${d.year}';
   }
 
-  static const int _maxBytes = 5 * 1024 * 1024; // 5 MB
+  static const int _maxBytes = 5 * 1024 * 1024;
 
-  Future<void> _pickFile(String label, void Function(String name) onPicked) async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'doc', 'docx'],
-      withData: kIsWeb,
-    );
-    if (result == null || result.files.isEmpty) return;
-    final pf = result.files.first;
+  Future<void> _pickFile(
+    String label,
+    void Function(String name, String? path, Uint8List? bytes) onPicked,
+  ) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx'],
+        withData: true, // selalu ambil bytes agar bisa dibuka di web maupun mobile
+      );
+      if (result == null || result.files.isEmpty) return;
+      final pf = result.files.first;
 
-    // Cek ukuran: di web pakai bytes, di mobile pakai size field
-    final size = pf.size;
-    if (size > _maxBytes) {
+      if (pf.size > _maxBytes) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$label melebihi batas 5 MB'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        return;
+      }
+
+      String? filePath;
+      Uint8List? fileBytes = pf.bytes;
+
+      if (!kIsWeb) {
+        filePath = pf.path;
+        // Jika path null tapi bytes ada, tulis ke temp dir
+        if (filePath == null && fileBytes != null) {
+          final dir = await getTemporaryDirectory();
+          final tmp = File('${dir.path}/${pf.name}');
+          await tmp.writeAsBytes(fileBytes);
+          filePath = tmp.path;
+        }
+      }
+
+      if (!mounted) return;
+      onPicked(pf.name, filePath, fileBytes);
+    } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('$label melebihi batas 5 MB'),
+          content: Text('Gagal memilih file: $e'),
           backgroundColor: AppColors.error,
         ),
       );
-      return;
     }
-    onPicked(pf.name);
   }
 
   void _submit() {
@@ -144,8 +180,14 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
             bidang: _selectedBidang ?? '',
             prodi: _prodiCtrl.text,
             cvName: _cvName,
+            cvPath: _cvPath,
+            cvBytes: _cvBytes,
             transkripName: _transkripName,
+            transkripPath: _transkripPath,
+            transkripBytes: _transkripBytes,
             suratName: _suratName,
+            suratPath: _suratPath,
+            suratBytes: _suratBytes,
             tanggalMulai: _tanggalMulai,
             tanggalSelesai: _tanggalSelesai,
           ),
@@ -176,7 +218,10 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
       ],
     ),
     body: GestureDetector(
-      onTap: () => setState(() => _showOpdDropdown = false),
+      onTap: () {
+        if (_showOpdDropdown) setState(() => _showOpdDropdown = false);
+      },
+      behavior: HitTestBehavior.translucent,
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 30),
         child: Form(
@@ -210,8 +255,8 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
                     _labelRequired('CV (PDF/DOC)'),
                     _fileField(
                       fileName: _cvName,
-                      onPick: () => _pickFile('CV', (n) => setState(() => _cvName = n)),
-                      onRemove: _cvName != null ? () => setState(() => _cvName = null) : null,
+                      onPick: () => _pickFile('CV', (n, p, b) => setState(() { _cvName = n; _cvPath = p; _cvBytes = b; })),
+                      onRemove: _cvName != null ? () => setState(() { _cvName = null; _cvPath = null; _cvBytes = null; }) : null,
                     ),
                     const SizedBox(height: 4),
                     const Text('Format: PDF/DOC/DOCX • Max 5 MB', style: TextStyle(color: AppColors.grey, fontSize: 11)),
@@ -219,8 +264,8 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
                     _labelRequired('Transkrip Nilai (PDF/DOC)'),
                     _fileField(
                       fileName: _transkripName,
-                      onPick: () => _pickFile('Transkrip', (n) => setState(() => _transkripName = n)),
-                      onRemove: _transkripName != null ? () => setState(() => _transkripName = null) : null,
+                      onPick: () => _pickFile('Transkrip', (n, p, b) => setState(() { _transkripName = n; _transkripPath = p; _transkripBytes = b; })),
+                      onRemove: _transkripName != null ? () => setState(() { _transkripName = null; _transkripPath = null; _transkripBytes = null; }) : null,
                     ),
                     const SizedBox(height: 4),
                     const Text('Format: PDF/DOC/DOCX • Max 5 MB', style: TextStyle(color: AppColors.grey, fontSize: 11)),
@@ -228,8 +273,8 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
                     _labelRequired('Surat Pengantar Kampus (PDF/DOC)'),
                     _fileField(
                       fileName: _suratName,
-                      onPick: () => _pickFile('Surat Pengantar', (n) => setState(() => _suratName = n)),
-                      onRemove: _suratName != null ? () => setState(() => _suratName = null) : null,
+                      onPick: () => _pickFile('Surat Pengantar', (n, p, b) => setState(() { _suratName = n; _suratPath = p; _suratBytes = b; })),
+                      onRemove: _suratName != null ? () => setState(() { _suratName = null; _suratPath = null; _suratBytes = null; }) : null,
                     ),
                     const SizedBox(height: 4),
                     const Text('Format: PDF/DOC/DOCX • Max 5 MB', style: TextStyle(color: AppColors.grey, fontSize: 11)),
@@ -262,7 +307,6 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
     bottomNavigationBar: _bottomNav(),
   );
 
-  // ── OPD field dengan autocomplete ─────────────────────────────────────────
   Widget _opdField() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -280,10 +324,7 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
               Expanded(
                 child: Text(
                   _selectedOpd?.nama ?? 'Pilih OPD',
-                  style: TextStyle(
-                    color: _selectedOpd != null ? AppColors.ink : AppColors.grey,
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: _selectedOpd != null ? AppColors.ink : AppColors.grey, fontSize: 13),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -333,13 +374,11 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
                       title: Text(opd.nama, style: TextStyle(fontSize: 13, color: isSelected ? AppColors.primary : AppColors.ink, fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal)),
                       subtitle: Text(opd.bidang, style: const TextStyle(fontSize: 11, color: AppColors.grey)),
                       trailing: isSelected ? const Icon(Icons.check, color: AppColors.primary, size: 16) : null,
-                      onTap: () {
-                        setState(() {
-                          _selectedOpd = opd;
-                          _opdSearchCtrl.text = opd.nama;
-                          _showOpdDropdown = false;
-                        });
-                      },
+                      onTap: () => setState(() {
+                        _selectedOpd = opd;
+                        _opdSearchCtrl.text = opd.nama;
+                        _showOpdDropdown = false;
+                      }),
                     );
                   },
                 ),
@@ -351,7 +390,6 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
     ],
   );
 
-  // ── Bidang dropdown ────────────────────────────────────────────────────────
   Widget _bidangDropdown() => GestureDetector(
     onTap: () => showModalBottomSheet(
       context: context,
@@ -452,20 +490,24 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
       ),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: onPick,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: hasFile ? AppColors.success : AppColors.primary,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(9),
-                  bottomLeft: Radius.circular(9),
-                ),
+          Material(
+            color: hasFile ? AppColors.success : AppColors.primary,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(9),
+              bottomLeft: Radius.circular(9),
+            ),
+            child: InkWell(
+              onTap: onPick,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(9),
+                bottomLeft: Radius.circular(9),
               ),
-              child: Text(
-                hasFile ? 'Ganti' : 'Pilih File',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                child: Text(
+                  hasFile ? 'Ganti' : 'Pilih File',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                ),
               ),
             ),
           ),
@@ -473,10 +515,7 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
           Expanded(
             child: Text(
               fileName ?? 'Belum ada file dipilih',
-              style: TextStyle(
-                color: hasFile ? AppColors.ink : AppColors.grey,
-                fontSize: 13,
-              ),
+              style: TextStyle(color: hasFile ? AppColors.ink : AppColors.grey, fontSize: 13),
               overflow: TextOverflow.ellipsis,
             ),
           ),
