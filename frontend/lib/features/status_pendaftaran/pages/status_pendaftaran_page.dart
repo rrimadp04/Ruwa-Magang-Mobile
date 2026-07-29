@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../profile/screen/guide_screen.dart';
 
 class StatusPendaftaranPage extends StatelessWidget {
   const StatusPendaftaranPage({
@@ -17,7 +18,7 @@ class StatusPendaftaranPage extends StatelessWidget {
     this.idPendaftaran,
   });
 
-  final String status; // 'berhasil' | 'ditolak'
+  final String status;
   final String opdNama;
   final String bidang;
   final String? prodi;
@@ -30,13 +31,12 @@ class StatusPendaftaranPage extends StatelessWidget {
   final String? idPendaftaran;
 
   bool get _berhasil => status == 'berhasil';
-
   String get _regId => idPendaftaran ?? (_berhasil ? '#REG-20260714' : '#REG-2024-0892');
 
   String _fmt(DateTime? d) {
     if (d == null) return '-';
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
-    return '${d.day.toString().padLeft(2, '0')} ${months[d.month - 1]} ${d.year}';
+    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+    return '${d.day.toString().padLeft(2,'0')} ${months[d.month-1]} ${d.year}';
   }
 
   @override
@@ -63,7 +63,7 @@ class StatusPendaftaranPage extends StatelessWidget {
     body: ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
       children: [
-        // Top banner
+        // Banner notifikasi
         Container(
           margin: const EdgeInsets.only(top: 12, bottom: 4),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -84,10 +84,7 @@ class StatusPendaftaranPage extends StatelessWidget {
                   _berhasil
                       ? 'Pendaftaran berhasil dikirim. Tunggu konfirmasi admin OPD.'
                       : 'Pendaftaran ditolak. Silakan cek alasan atau hubungi admin.',
-                  style: TextStyle(
-                    color: _berhasil ? AppColors.success : AppColors.error,
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: _berhasil ? AppColors.success : AppColors.error, fontSize: 13),
                 ),
               ),
               if (_berhasil)
@@ -99,24 +96,16 @@ class StatusPendaftaranPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 20),
-        // Icon status
+        // Ikon status
         Center(
           child: Container(
-            width: 80,
-            height: 80,
+            width: 80, height: 80,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(
-                color: _berhasil ? AppColors.primary : AppColors.error,
-                width: 3,
-              ),
+              border: Border.all(color: _berhasil ? AppColors.primary : AppColors.error, width: 3),
               color: _berhasil ? const Color(0xFFEFF6FF) : const Color(0xFFFEF2F2),
             ),
-            child: Icon(
-              _berhasil ? Icons.check : Icons.close,
-              size: 40,
-              color: _berhasil ? AppColors.primary : AppColors.error,
-            ),
+            child: Icon(_berhasil ? Icons.check : Icons.close, size: 40, color: _berhasil ? AppColors.primary : AppColors.error),
           ),
         ),
         const SizedBox(height: 16),
@@ -134,7 +123,7 @@ class StatusPendaftaranPage extends StatelessWidget {
           style: const TextStyle(color: AppColors.grey, fontSize: 13, height: 1.5),
         ),
         const SizedBox(height: 20),
-        // Alasan penolakan (hanya jika ditolak)
+        // Alasan penolakan
         if (!_berhasil) ...[
           Container(
             padding: const EdgeInsets.all(16),
@@ -142,18 +131,13 @@ class StatusPendaftaranPage extends StatelessWidget {
               color: AppColors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.border),
-              // Left red border
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 4,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: AppColors.error,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
+                  width: 4, height: 60,
+                  decoration: BoxDecoration(color: AppColors.error, borderRadius: BorderRadius.circular(4)),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -164,23 +148,13 @@ class StatusPendaftaranPage extends StatelessWidget {
                         children: [
                           Icon(Icons.info_outline, color: AppColors.error, size: 16),
                           SizedBox(width: 6),
-                          Text(
-                            'ALASAN PENOLAKAN',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.error,
-                              fontSize: 12,
-                            ),
-                          ),
+                          Text('ALASAN PENOLAKAN', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.error, fontSize: 12)),
                         ],
                       ),
                       const SizedBox(height: 10),
                       Container(
                         padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                        decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(8)),
                         child: Text(
                           '"${alasanPenolakan ?? 'Kualifikasi prodi tidak sesuai dengan kebutuhan unit kerja saat ini.'}"',
                           style: const TextStyle(color: AppColors.ink, fontSize: 13, height: 1.5),
@@ -246,14 +220,11 @@ class StatusPendaftaranPage extends StatelessWidget {
               ],
               const Text('OPD Tujuan', style: TextStyle(color: AppColors.grey, fontSize: 12)),
               const SizedBox(height: 4),
-              Text(
-                opdNama,
-                style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 14),
-              ),
+              Text(opdNama, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 14)),
               const SizedBox(height: 12),
               Text(_berhasil ? 'Bidang' : 'Bidang / Unit', style: const TextStyle(color: AppColors.grey, fontSize: 12)),
               const SizedBox(height: 4),
-              Text(bidang, style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.w700, fontSize: 13)),
+              Text(bidang.isNotEmpty ? bidang : '-', style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.w700, fontSize: 13)),
               if (_berhasil && prodi != null) ...[
                 const SizedBox(height: 12),
                 Row(
@@ -291,13 +262,11 @@ class StatusPendaftaranPage extends StatelessWidget {
                         children: [
                           const Text('TANGGAL MULAI', style: TextStyle(color: AppColors.grey, fontSize: 11, fontWeight: FontWeight.w600)),
                           const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.grey),
-                              const SizedBox(width: 4),
-                              Text(_fmt(tanggalMulai ?? DateTime(2024, 8, 1)), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                            ],
-                          ),
+                          Row(children: [
+                            const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.grey),
+                            const SizedBox(width: 4),
+                            Text(_fmt(tanggalMulai ?? DateTime(2024, 8, 1)), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                          ]),
                         ],
                       ),
                     ),
@@ -307,13 +276,11 @@ class StatusPendaftaranPage extends StatelessWidget {
                         children: [
                           const Text('TANGGAL SELESAI', style: TextStyle(color: AppColors.grey, fontSize: 11, fontWeight: FontWeight.w600)),
                           const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.grey),
-                              const SizedBox(width: 4),
-                              Text(_fmt(tanggalSelesai ?? DateTime(2024, 10, 31)), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                            ],
-                          ),
+                          Row(children: [
+                            const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.grey),
+                            const SizedBox(width: 4),
+                            Text(_fmt(tanggalSelesai ?? DateTime(2024, 10, 31)), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                          ]),
                         ],
                       ),
                     ),
@@ -323,7 +290,7 @@ class StatusPendaftaranPage extends StatelessWidget {
             ],
           ),
         ),
-        // Berkas terunggah (hanya jika berhasil)
+        // Berkas terunggah
         if (_berhasil) ...[
           const SizedBox(height: 12),
           Container(
@@ -338,11 +305,11 @@ class StatusPendaftaranPage extends StatelessWidget {
               children: [
                 const Text('BERKAS TERUNGGAH', style: TextStyle(color: AppColors.grey, fontSize: 11, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 12),
-                _berkasItem(Icons.description_outlined, 'Curriculum Vitae (CV)', 'PDF • 1.2 MB'),
+                _berkasItem(Icons.description_outlined, 'Curriculum Vitae (CV)', cvName != null ? 'PDF • ${cvName!}' : 'PDF • 1.2 MB'),
                 const Divider(height: 16),
-                _berkasItem(Icons.receipt_long_outlined, 'Transkrip Nilai', 'PDF • 850 KB'),
+                _berkasItem(Icons.receipt_long_outlined, 'Transkrip Nilai', transkripName != null ? 'PDF • ${transkripName!}' : 'PDF • 850 KB'),
                 const Divider(height: 16),
-                _berkasItem(Icons.mail_outline, 'Surat Pengantar Kampus', 'PDF • 520 KB'),
+                _berkasItem(Icons.mail_outline, 'Surat Pengantar Kampus', suratName != null ? 'PDF • ${suratName!}' : 'PDF • 520 KB'),
               ],
             ),
           ),
@@ -370,7 +337,7 @@ class StatusPendaftaranPage extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 20),
-        // Buttons
+        // Tombol Kembali ke Beranda
         FilledButton.icon(
           onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
           icon: const Icon(Icons.home_outlined, size: 18),
@@ -382,8 +349,16 @@ class StatusPendaftaranPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 10),
+        // Tombol kedua — Lihat Panduan Magang (berhasil) atau Cari Lowongan Lain (ditolak)
         OutlinedButton.icon(
-          onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
+          onPressed: () {
+            if (_berhasil) {
+              // Navigasi ke GuideScreen dari modul profile
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const GuideScreen()));
+            } else {
+              Navigator.of(context).popUntil((r) => r.isFirst);
+            }
+          },
           icon: Icon(_berhasil ? Icons.menu_book_outlined : Icons.search, size: 18),
           label: Text(
             _berhasil ? 'Lihat Panduan Magang' : 'Cari Lowongan Lain',
@@ -410,12 +385,8 @@ class StatusPendaftaranPage extends StatelessWidget {
   Widget _berkasItem(IconData icon, String nama, String ukuran) => Row(
     children: [
       Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: AppColors.primaryLight,
-          borderRadius: BorderRadius.circular(8),
-        ),
+        width: 36, height: 36,
+        decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(8)),
         child: Icon(icon, color: AppColors.primary, size: 18),
       ),
       const SizedBox(width: 12),

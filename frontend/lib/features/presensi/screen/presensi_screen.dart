@@ -296,7 +296,7 @@ class _PresensiScreenState extends State<PresensiScreen> {
 
   Future<void> _pickProofFile() async {
     try {
-      final picked = await FilePicker.pickFiles(
+      final picked = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: const ['jpg', 'jpeg', 'png', 'pdf'],
         withData: true,

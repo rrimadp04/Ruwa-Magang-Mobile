@@ -42,11 +42,7 @@ class OpdCard extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               opd.initial,
-              style: const TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 18,
-                color: AppColors.ink,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.ink),
             ),
           ),
         ),
@@ -62,11 +58,7 @@ class OpdCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       opd.nama,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
-                        color: AppColors.ink,
-                      ),
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.ink),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -78,20 +70,13 @@ class OpdCard extends StatelessWidget {
                     ),
                     child: Text(
                       opd.status,
-                      style: const TextStyle(
-                        color: Color(0xFF065F46),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: const TextStyle(color: Color(0xFF065F46), fontSize: 11, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 4),
-              Text(
-                opd.bidang,
-                style: const TextStyle(color: AppColors.primary, fontSize: 13),
-              ),
+              Text(opd.bidang, style: const TextStyle(color: AppColors.primary, fontSize: 13)),
               const SizedBox(height: 8),
               Text(
                 opd.deskripsi ?? 'Informasi singkat OPD belum tersedia.',
@@ -99,15 +84,17 @@ class OpdCard extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
+              // Bidang chips
+              if (opd.bidangs.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                _bidangChips(),
+              ],
               const SizedBox(height: 10),
               Row(
                 children: [
                   const Icon(Icons.location_on_outlined, size: 14, color: AppColors.grey),
                   const SizedBox(width: 4),
-                  Text(
-                    opd.alamat ?? '-',
-                    style: const TextStyle(color: AppColors.grey, fontSize: 12),
-                  ),
+                  Text(opd.alamat ?? '-', style: const TextStyle(color: AppColors.grey, fontSize: 12)),
                 ],
               ),
               const SizedBox(height: 4),
@@ -116,7 +103,7 @@ class OpdCard extends StatelessWidget {
                   const Icon(Icons.people_outline, size: 14, color: AppColors.grey),
                   const SizedBox(width: 4),
                   Text(
-                    'Peserta Aktif: ${opd.pesertaAktif} / ${opd.kuota}',
+                    'Terisi: ${opd.pesertaAktif} / ${opd.kuota}',
                     style: const TextStyle(color: AppColors.grey, fontSize: 12),
                   ),
                 ],
@@ -128,9 +115,7 @@ class OpdCard extends StatelessWidget {
                   minimumSize: const Size.fromHeight(42),
                   side: const BorderSide(color: AppColors.primary),
                   foregroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
                 child: const Text('Lihat Detail'),
               ),
@@ -138,6 +123,37 @@ class OpdCard extends StatelessWidget {
           ),
         ),
       ],
+    ),
+  );
+
+  Widget _bidangChips() {
+    const maxShow = 3;
+    final show = opd.bidangs.take(maxShow).toList();
+    final extra = opd.bidangs.length - maxShow;
+    return Wrap(
+      spacing: 6,
+      runSpacing: 4,
+      children: [
+        ...show.map((b) => _chip(b.name)),
+        if (extra > 0) _chip('+$extra lainnya', isExtra: true),
+      ],
+    );
+  }
+
+  Widget _chip(String label, {bool isExtra = false}) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    decoration: BoxDecoration(
+      color: isExtra ? const Color(0xFFE0EAFF) : const Color(0xFFF0FDF4),
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: isExtra ? AppColors.primary : const Color(0xFF86EFAC)),
+    ),
+    child: Text(
+      label.length > 18 ? '${label.substring(0, 18)}...' : label,
+      style: TextStyle(
+        fontSize: 10,
+        fontWeight: FontWeight.w600,
+        color: isExtra ? AppColors.primary : const Color(0xFF166534),
+      ),
     ),
   );
 }
