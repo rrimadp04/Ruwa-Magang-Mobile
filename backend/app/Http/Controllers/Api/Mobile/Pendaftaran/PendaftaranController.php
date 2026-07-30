@@ -7,6 +7,8 @@ use App\Models\Opd;
 use App\Models\Pendaftaran;
 use App\Models\Testimony;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -82,24 +84,48 @@ class PendaftaranController extends Controller
             ], 409);
         }
 
-        $cvPath         = $request->file('cv')->store('pendaftaran/cv', 'public');
-        $suratPath      = $request->file('surat')->store('pendaftaran/surat', 'public');
-        $transkripPath  = $request->file('transkrip')->store('pendaftaran/transkrip', 'public');
+        $cvPath        = $request->file('cv')->store('pendaftaran/cv', 'public');
+        $suratPath     = $request->file('surat')->store('pendaftaran/surat', 'public');
+        $transkripPath = $request->file('transkrip')->store('pendaftaran/transkrip', 'public');
 
-        $pendaftaran = Pendaftaran::create([
-            'user_id'        => $user->id,
-            'opd_id'         => $request->opd_id,
-            'bidang_id'      => $request->bidang_id,
-            'bidang'         => $request->bidang,
-            'university'     => $user->university,
-            'prodi'          => $request->prodi,
-            'status'         => 'pending',
-            'cv_path'        => $cvPath,
-            'transkrip_path' => $transkripPath,
-            'surat_path'     => $suratPath,
-            'start_date'     => $request->start_date,
-            'end_date'       => $request->end_date,
-        ]);
+        $opdId = (int) $request->opd_id;
+
+        $pendaftaran = DB::transaction(function () use ($user, $request, $cvPath, $suratPath, $transkripPath, $opdId) {
+            $pendaftaran = Pendaftaran::create([
+                'user_id'        => $user->id,
+                'opd_id'         => $opdId,
+                'bidang_id'      => $request->bidang_id,
+                'bidang'         => $request->bidang,
+                'university'     => $user->university,
+                'prodi'          => $request->prodi,
+                'status'         => 'pending',
+                'cv_path'        => $cvPath,
+                'transkrip_path' => $transkripPath,
+                'surat_path'     => $suratPath,
+                'start_date'     => $request->start_date,
+                'end_date'       => $request->end_date,
+            ]);
+
+            // Update users.opd_id dan status agar admin OPD bisa melihat
+            DB::table('users')->where('id', $user->id)
+                ->update(['opd_id' => $opdId, 'status' => 'pending']);
+
+            // Sync ke tabel pesertas (ruwa-magang web)
+            DB::table('pesertas')->updateOrInsert(
+                ['user_id' => $user->id],
+                [
+                    'name'       => $user->name,
+                    'university' => $user->university ?? '',
+                    'prodi'      => $request->prodi,
+                    'opd_id'     => $opdId,
+                    'status'     => 'pending',
+                    'updated_at' => now(),
+                    'created_at' => now(),
+                ]
+            );
+
+            return $pendaftaran;
+        });
 
         return response()->json([
             'status'  => 'success',
@@ -228,7 +254,7 @@ class PendaftaranController extends Controller
             'status'     => $p->status,
             'start_date' => $p->start_date?->toDateString(),
             'end_date'   => $p->end_date?->toDateString(),
-            'catatan_penolakan' => $p->catatan_penolakan,
+            'catatan_penolakan' => $p->catatan_penolakan ?? $p->admin_note,
             'cv_url'     => $p->cv_url,
             'transkrip_url' => $p->transkrip_url,
             'surat_url'  => $p->surat_url,

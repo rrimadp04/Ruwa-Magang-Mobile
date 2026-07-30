@@ -430,14 +430,8 @@ class StatusPendaftaranPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        const Text(
-          '© 2026 • Dinas Komunikasi, Informatika, dan Statistik (Diskominfotik) Provinsi Lampung',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: AppColors.grey, fontSize: 11),
-        ),
       ],
     ),
-    bottomNavigationBar: _bottomNav(),
   );
 
   Widget _berkasItem(
@@ -478,17 +472,4 @@ class StatusPendaftaranPage extends StatelessWidget {
     );
   }
 
-  Widget _bottomNav() => NavigationBar(
-    selectedIndex: _berhasil ? 1 : 0,
-    onDestinationSelected: (_) {},
-    height: 74,
-    indicatorColor: AppColors.primaryLight,
-    destinations: const [
-      NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: 'Beranda'),
-      NavigationDestination(icon: Icon(Icons.assignment_outlined), selectedIcon: Icon(Icons.assignment), label: 'Daftar'),
-      NavigationDestination(icon: Icon(Icons.edit_note_outlined), selectedIcon: Icon(Icons.edit_note), label: 'Logbook'),
-      NavigationDestination(icon: Icon(Icons.workspace_premium_outlined), selectedIcon: Icon(Icons.workspace_premium), label: 'Sertifikat'),
-      NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profil'),
-    ],
-  );
 }

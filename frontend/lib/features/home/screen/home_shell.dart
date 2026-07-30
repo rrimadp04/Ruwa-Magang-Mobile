@@ -36,11 +36,12 @@ class _HomeShellState extends State<HomeShell> {
   @override void initState() { super.initState(); _dashboardFuture = widget.dashboardRepository.getDashboard(); _statusFuture = widget.registrationStatusRepository.getStatus(); }
 
   @override Widget build(BuildContext context) => Scaffold(
-    body: SafeArea(child: IndexedStack(index: _index, children: [_dashboard(), const OpdPage(), ListLogbookScreen(repository: widget.logbookRepository), NilaiSertifikatScreen(repository: widget.nilaiRepository), ParticipantProfileScreen(repository: widget.profileRepository)])),
+    body: SafeArea(child: IndexedStack(index: _index, children: [_dashboard(), OpdPage(onRegistered: refreshStatus), ListLogbookScreen(repository: widget.logbookRepository), NilaiSertifikatScreen(repository: widget.nilaiRepository), ParticipantProfileScreen(repository: widget.profileRepository)])),
     bottomNavigationBar: NavigationBar(selectedIndex: _index, onDestinationSelected: _selectTab, indicatorColor: const Color(0xFFE4E0FF), destinations: const [NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Dashboard'), NavigationDestination(icon: Icon(Icons.assignment_outlined), label: 'Daftar'), NavigationDestination(icon: Icon(Icons.book_outlined), label: 'Logbook'), NavigationDestination(icon: Icon(Icons.workspace_premium_outlined), label: 'Nilai & Sertif'), NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profil')]),
   );
 
   Future<void> _selectTab(int index) async {
+    // Tab Logbook (2) dan Nilai & Sertif (3): hanya bisa diakses jika accepted
     if (index == 2 || index == 3) {
       final status = await _statusFuture;
       if (status != RegistrationStatus.accepted) {
@@ -53,7 +54,22 @@ class _HomeShellState extends State<HomeShell> {
         return;
       }
     }
+    // Tab Daftar (1): di-lock jika sudah accepted
+    if (index == 1) {
+      final status = await _statusFuture;
+      if (status == RegistrationStatus.accepted) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pendaftaran Anda sudah diterima. Halaman pendaftaran tidak dapat diakses.')),
+        );
+        return;
+      }
+    }
     if (mounted) setState(() => _index = index);
+  }
+
+  void refreshStatus() {
+    setState(() => _statusFuture = widget.registrationStatusRepository.getStatus());
   }
 
   Widget _dashboard() => FutureBuilder<ParticipantDashboard>(

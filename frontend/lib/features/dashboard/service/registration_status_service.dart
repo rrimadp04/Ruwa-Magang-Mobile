@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 
 import '../../../core/network/api_client.dart';
 
-enum RegistrationStatus { notRegistered, pending, accepted }
+enum RegistrationStatus { notRegistered, pending, accepted, rejected }
 
 class RegistrationStatusService {
   RegistrationStatusService({required this.baseUrl, required this.accessToken});
@@ -34,8 +34,9 @@ class RegistrationStatusService {
     final raw = decoded['registration_status']?.toString() ?? '';
     return switch (raw) {
       'accepted' => RegistrationStatus.accepted,
-      'pending' => RegistrationStatus.pending,
-      _ => RegistrationStatus.notRegistered,
+      'pending'  => RegistrationStatus.pending,
+      'rejected' => RegistrationStatus.rejected,
+      _          => RegistrationStatus.notRegistered,
     };
   }
 }

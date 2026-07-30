@@ -12,7 +12,8 @@ class Pendaftaran extends Model
         'user_id', 'opd_id', 'bidang_id', 'bidang',
         'university', 'prodi', 'status',
         'cv_path', 'transkrip_path', 'surat_path',
-        'start_date', 'end_date', 'catatan_penolakan',
+        'start_date', 'end_date',
+        'catatan_penolakan', 'admin_note', 'note',
     ];
 
     protected $casts = [

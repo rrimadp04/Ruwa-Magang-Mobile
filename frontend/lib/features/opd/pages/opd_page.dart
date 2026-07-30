@@ -27,8 +27,9 @@ const _statusList  = ['Semua Status', 'Terbuka', 'Penuh', 'Paling Diminati'];
 const _urutkanList = ['Default', 'A-Z', 'Z-A'];
 
 class OpdPage extends StatefulWidget {
-  const OpdPage({super.key});
+  const OpdPage({super.key, this.onRegistered});
 
+  final VoidCallback? onRegistered;
   @override
   State<OpdPage> createState() => _OpdPageState();
 }

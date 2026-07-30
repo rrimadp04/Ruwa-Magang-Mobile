@@ -4,8 +4,12 @@ namespace App\Http\Controllers\Api\Mobile\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Models\Logbook;
+use App\Models\Participant;
+use App\Models\Pendaftaran;
 use App\Models\Presensi;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
@@ -93,23 +97,69 @@ class DashboardController extends Controller
 
     /**
      * Status proses pendaftaran peserta.
-     * Response: not_registered | pending | accepted
+     * Sumber kebenaran: tabel pendaftarans (shared dengan ruwa-magang web).
+     * Fallback ke tabel participants (mobile) dan pesertas (web).
+     * Response: not_registered | pending | accepted | rejected
      */
     public function registrationStatus(Request $request)
     {
-        $participant = $request->user()->participant;
+        $user = $request->user();
 
-        if (! $participant) {
-            $status = 'not_registered';
-        } elseif ($participant->status === 'aktif' || $participant->status === 'accepted') {
-            $status = 'accepted';
-        } elseif ($participant->status === 'pending') {
-            $status = 'pending';
-        } else {
-            $status = 'not_registered';
+        // 1. Cek tabel pendaftarans (shared DB)
+        $pendaftaran = \App\Models\Pendaftaran::where('user_id', $user->id)
+            ->latest()
+            ->first();
+
+        if ($pendaftaran) {
+            $status = match ($pendaftaran->status) {
+                'accepted', 'diterima', 'aktif' => 'accepted',
+                'rejected', 'ditolak'           => 'rejected',
+                default                         => 'pending',
+            };
+
+            // Sync participants table agar konsisten
+            $this->syncParticipant($user->id, $status);
+
+            return response()->json([
+                'registration_status' => $status,
+                'pendaftaran_id'      => $pendaftaran->id,
+                'opd_nama'            => $pendaftaran->opd?->name,
+                'bidang'              => $pendaftaran->bidang,
+                'catatan_penolakan'   => $pendaftaran->catatan_penolakan ?? $pendaftaran->admin_note,
+            ]);
         }
 
-        return response()->json(['registration_status' => $status]);
+        // 2. Fallback: cek tabel pesertas (web) via DB facade
+        if (\Illuminate\Support\Facades\Schema::hasTable('pesertas')) {
+            $peserta = \Illuminate\Support\Facades\DB::table('pesertas')
+                ->where('user_id', $user->id)
+                ->first();
+
+            if ($peserta) {
+                $status = in_array($peserta->status, ['aktif', 'accepted', 'diterima'])
+                    ? 'accepted'
+                    : ($peserta->status === 'ditolak' ? 'rejected' : 'pending');
+
+                $this->syncParticipant($user->id, $status);
+                return response()->json(['registration_status' => $status]);
+            }
+        }
+
+        return response()->json(['registration_status' => 'not_registered']);
+    }
+
+    private function syncParticipant(int $userId, string $status): void
+    {
+        $participantStatus = match ($status) {
+            'accepted' => 'aktif',
+            'rejected' => 'ditolak',
+            default    => 'pending',
+        };
+
+        \App\Models\Participant::updateOrCreate(
+            ['user_id' => $userId],
+            ['status'  => $participantStatus]
+        );
     }
 
     /**
@@ -118,18 +168,27 @@ class DashboardController extends Controller
      */
     private function guardAccepted(Request $request): ?\Illuminate\Http\JsonResponse
     {
-        $participant = $request->user()->participant;
-        $accepted = $participant &&
-            in_array($participant->status, ['aktif', 'accepted'], true);
+        $user = $request->user();
 
-        if (! $accepted) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Pendaftaran Anda belum disetujui. Fitur ini akan tersedia setelah admin menerima pendaftaran Anda.',
-            ], 403);
+        // Cek dari pendaftarans (shared DB) — sumber kebenaran utama
+        $pendaftaran = Pendaftaran::where('user_id', $user->id)
+            ->whereIn('status', ['accepted'])
+            ->exists();
+
+        if ($pendaftaran) return null;
+
+        // Fallback: cek pesertas (web)
+        if (Schema::hasTable('pesertas')) {
+            $peserta = DB::table('pesertas')->where('user_id', $user->id)->first();
+            if ($peserta && in_array($peserta->status, ['aktif', 'accepted', 'diterima'], true)) {
+                return null;
+            }
         }
 
-        return null;
+        return response()->json([
+            'status'  => 'error',
+            'message' => 'Pendaftaran Anda belum disetujui. Fitur ini akan tersedia setelah admin menerima pendaftaran Anda.',
+        ], 403);
     }
 
     public function index(Request $request)

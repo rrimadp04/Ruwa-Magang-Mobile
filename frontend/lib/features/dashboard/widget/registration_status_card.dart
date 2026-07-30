@@ -16,26 +16,39 @@ class RegistrationStatusCard extends StatelessWidget {
 
     final activeStep = switch (status) {
       RegistrationStatus.notRegistered => 0,
-      RegistrationStatus.pending => 1,
-      RegistrationStatus.accepted => 2,
+      RegistrationStatus.pending       => 1,
+      RegistrationStatus.rejected      => 1,
+      RegistrationStatus.accepted      => 2,
     };
+
+    final isRejected = status == RegistrationStatus.rejected;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color(0xFFE5E7EF)),
+        color: isRejected ? const Color(0xFFFEF2F2) : Colors.white,
+        border: Border.all(color: isRejected ? const Color(0xFFFCA5A5) : const Color(0xFFE5E7EF)),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Status Proses Pendaftaran',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF172033)),
+          Row(
+            children: [
+              const Text(
+                'Status Proses Pendaftaran',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF172033)),
+              ),
+              if (isRejected) ...[
+                const SizedBox(width: 8),
+                const Icon(Icons.cancel_outlined, size: 14, color: Color(0xFFDC2626)),
+                const SizedBox(width: 4),
+                const Text('Ditolak', style: TextStyle(fontSize: 11, color: Color(0xFFDC2626), fontWeight: FontWeight.w600)),
+              ],
+            ],
           ),
           const SizedBox(height: 16),
-          _RegistrationProgressStepper(activeStep: activeStep),
+          _RegistrationProgressStepper(activeStep: activeStep, isRejected: isRejected),
         ],
       ),
     );
@@ -43,9 +56,10 @@ class RegistrationStatusCard extends StatelessWidget {
 }
 
 class _RegistrationProgressStepper extends StatelessWidget {
-  const _RegistrationProgressStepper({required this.activeStep});
+  const _RegistrationProgressStepper({required this.activeStep, this.isRejected = false});
 
   final int activeStep;
+  final bool isRejected;
 
   static const _labels = ['Daftar', 'Diproses', 'Diterima'];
   static const _primary = Color(0xFF2457D6);
@@ -72,6 +86,7 @@ class _RegistrationProgressStepper extends StatelessWidget {
         final stepIndex = i ~/ 2;
         final isDone = stepIndex < activeStep;
         final isActive = stepIndex == activeStep;
+        final isError = isRejected && isActive;
 
         return Column(
           mainAxisSize: MainAxisSize.min,
@@ -83,34 +98,24 @@ class _RegistrationProgressStepper extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: isDone
                     ? _done
-                    : isActive
-                        ? _primary
-                        : Colors.white,
+                    : isError
+                        ? const Color(0xFFDC2626)
+                        : isActive
+                            ? _primary
+                            : Colors.white,
                 border: Border.all(
-                  color: isDone ? _done : isActive ? _primary : _inactive,
+                  color: isDone ? _done : isError ? const Color(0xFFDC2626) : isActive ? _primary : _inactive,
                   width: 2,
                 ),
               ),
               child: Center(
                 child: isDone
                     ? const Icon(Icons.check, size: 14, color: Colors.white)
-                    : isActive
-                        ? Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: _inactive,
-                            ),
-                          ),
+                    : isError
+                        ? const Icon(Icons.close, size: 14, color: Colors.white)
+                        : isActive
+                            ? Container(width: 8, height: 8, decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white))
+                            : Container(width: 8, height: 8, decoration: BoxDecoration(shape: BoxShape.circle, color: _inactive)),
               ),
             ),
             const SizedBox(height: 6),

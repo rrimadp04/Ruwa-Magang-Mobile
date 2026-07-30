@@ -3,9 +3,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../auth/repositories/auth_repository.dart';
+import '../../../core/config/api_config.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../opd/models/opd_model.dart';
 import '../../status_pendaftaran/pages/status_pendaftaran_page.dart';
+import '../service/pendaftaran_service.dart';
 
 class PendaftaranPage extends StatefulWidget {
   const PendaftaranPage({super.key, this.selectedOpd});
@@ -40,6 +44,7 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
 
   List<OpdModel> _opdSuggestions = kDefaultOpds;
   bool _showOpdDropdown = false;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -117,7 +122,7 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'doc', 'docx'],
-        withData: true, // selalu ambil bytes agar bisa dibuka di web maupun mobile
+        withData: true,
       );
       if (result == null || result.files.isEmpty) return;
       final pf = result.files.first;
@@ -125,10 +130,7 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
       if (pf.size > _maxBytes) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('$label melebihi batas 5 MB'),
-            backgroundColor: AppColors.error,
-          ),
+          SnackBar(content: Text('$label melebihi batas 5 MB'), backgroundColor: AppColors.error),
         );
         return;
       }
@@ -138,7 +140,6 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
 
       if (!kIsWeb) {
         filePath = pf.path;
-        // Jika path null tapi bytes ada, tulis ke temp dir
         if (filePath == null && fileBytes != null) {
           final dir = await getTemporaryDirectory();
           final tmp = File('${dir.path}/${pf.name}');
@@ -152,47 +153,91 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal memilih file: $e'),
-          backgroundColor: AppColors.error,
-        ),
+        SnackBar(content: Text('Gagal memilih file: $e'), backgroundColor: AppColors.error),
       );
     }
   }
 
-  void _submit() {
-    if (_cvName == null || _transkripName == null || _suratName == null) {
+  Future<void> _submit() async {
+    if (_selectedOpd == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Harap upload CV, Transkrip, dan Surat Pengantar'),
-          backgroundColor: AppColors.error,
-        ),
+        const SnackBar(content: Text('Harap pilih OPD tujuan'), backgroundColor: AppColors.error),
       );
       return;
     }
-    if (_formKey.currentState!.validate()) {
+    if (_cvName == null || _transkripName == null || _suratName == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Harap upload CV, Transkrip, dan Surat Pengantar'), backgroundColor: AppColors.error),
+      );
+      return;
+    }
+    if (_tanggalMulai == null || _tanggalSelesai == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Harap pilih tanggal mulai dan selesai'), backgroundColor: AppColors.error),
+      );
+      return;
+    }
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString(AuthRepository.tokenKey) ?? '';
+
+      String fmtDate(DateTime d) =>
+          '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+      await PendaftaranService(baseUrl: ApiConfig.baseUrl, accessToken: token).submit(
+        opdId:          _selectedOpd!.id,
+        prodi:          _prodiCtrl.text,
+        startDate:      fmtDate(_tanggalMulai!),
+        endDate:        fmtDate(_tanggalSelesai!),
+        bidang:         _selectedBidang,
+        cvPath:         _cvPath,
+        cvBytes:        _cvBytes,
+        cvName:         _cvName,
+        transkripPath:  _transkripPath,
+        transkripBytes: _transkripBytes,
+        transkripName:  _transkripName,
+        suratPath:      _suratPath,
+        suratBytes:     _suratBytes,
+        suratName:      _suratName,
+      );
+
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (_) => StatusPendaftaranPage(
-            status: 'berhasil',
-            opdNama: _selectedOpd?.nama ?? 'DINAS KOMUNIKASI, INFORMATIKA DAN STATISTIK',
-            bidang: _selectedBidang ?? '',
-            prodi: _prodiCtrl.text,
-            cvName: _cvName,
-            cvPath: _cvPath,
-            cvBytes: _cvBytes,
-            transkripName: _transkripName,
-            transkripPath: _transkripPath,
+            status:         'berhasil',
+            opdNama:        _selectedOpd!.nama,
+            bidang:         _selectedBidang ?? '',
+            prodi:          _prodiCtrl.text,
+            cvName:         _cvName,
+            cvPath:         _cvPath,
+            cvBytes:        _cvBytes,
+            transkripName:  _transkripName,
+            transkripPath:  _transkripPath,
             transkripBytes: _transkripBytes,
-            suratName: _suratName,
-            suratPath: _suratPath,
-            suratBytes: _suratBytes,
-            tanggalMulai: _tanggalMulai,
+            suratName:      _suratName,
+            suratPath:      _suratPath,
+            suratBytes:     _suratBytes,
+            tanggalMulai:   _tanggalMulai,
             tanggalSelesai: _tanggalSelesai,
           ),
         ),
       );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
@@ -218,9 +263,7 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
       ],
     ),
     body: GestureDetector(
-      onTap: () {
-        if (_showOpdDropdown) setState(() => _showOpdDropdown = false);
-      },
+      onTap: () { if (_showOpdDropdown) setState(() => _showOpdDropdown = false); },
       behavior: HitTestBehavior.translucent,
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 30),
@@ -286,25 +329,24 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
                     _dateField(_tanggalSelesai, () => _pickDate(false)),
                     const SizedBox(height: 20),
                     FilledButton(
-                      onPressed: _submit,
+                      onPressed: _isSubmitting ? null : _submit,
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         minimumSize: const Size.fromHeight(52),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('Kirim Pendaftaran', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                      child: _isSubmitting
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Text('Kirim Pendaftaran', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-              const Text('© 2026 • Dinas Komunikasi, Informatika, dan Statistik (Diskominfotik) Provinsi Lampung', textAlign: TextAlign.center, style: TextStyle(color: AppColors.grey, fontSize: 11)),
             ],
           ),
         ),
       ),
     ),
-    bottomNavigationBar: _bottomNav(),
   );
 
   Widget _opdField() => Column(
@@ -492,22 +534,13 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
         children: [
           Material(
             color: hasFile ? AppColors.success : AppColors.primary,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(9),
-              bottomLeft: Radius.circular(9),
-            ),
+            borderRadius: const BorderRadius.only(topLeft: Radius.circular(9), bottomLeft: Radius.circular(9)),
             child: InkWell(
               onTap: onPick,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(9),
-                bottomLeft: Radius.circular(9),
-              ),
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(9), bottomLeft: Radius.circular(9)),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                child: Text(
-                  hasFile ? 'Ganti' : 'Pilih File',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
-                ),
+                child: Text(hasFile ? 'Ganti' : 'Pilih File', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
               ),
             ),
           ),
@@ -547,19 +580,5 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
         ],
       ),
     ),
-  );
-
-  Widget _bottomNav() => NavigationBar(
-    selectedIndex: 1,
-    onDestinationSelected: (_) {},
-    height: 74,
-    indicatorColor: AppColors.primaryLight,
-    destinations: const [
-      NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: 'Beranda'),
-      NavigationDestination(icon: Icon(Icons.assignment_outlined), selectedIcon: Icon(Icons.assignment), label: 'Daftar'),
-      NavigationDestination(icon: Icon(Icons.edit_note_outlined), selectedIcon: Icon(Icons.edit_note), label: 'Logbook'),
-      NavigationDestination(icon: Icon(Icons.workspace_premium_outlined), selectedIcon: Icon(Icons.workspace_premium), label: 'Sertifikat'),
-      NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profil'),
-    ],
   );
 }
