@@ -145,6 +145,7 @@ class _ParticipantProfileScreenState extends State<ParticipantProfileScreen> {
                 ),
               ),
               const Divider(height: 1),
+              _infoRow('NIM', profile.nim),
               _infoRow('Universitas', profile.university),
               _infoRow('Program Studi', profile.studyProgram),
               _infoRow('Status Magang', profile.statusLabel, valueColor: const Color(0xFF08794D)),
