@@ -1,6 +1,5 @@
 ﻿import 'package:flutter/material.dart';
 
-import '../../nilai_sertifikat/screen/notification_screen.dart';
 import '../model/logbook_model.dart';
 import '../repository/logbook_repository.dart';
 import '../widget/custom_appbar.dart';
@@ -38,40 +37,7 @@ class _ListLogbookScreenState extends State<ListLogbookScreen> {
     appBar: CustomAppbar(
       title: 'Logbook',
       showBack: false,
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: logbookBorder),
-              boxShadow: const [BoxShadow(color: Color(0x080F172A), blurRadius: 10, offset: Offset(0, 4))],
-            ),
-            child: Stack(
-              children: [
-                IconButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const NotificationScreen()),
-                ),
-                icon: const Icon(
-                  Icons.notifications_none_rounded,
-                  color: logbookInk,
-                ),
-              ),
-                const Positioned(
-                right: 8,
-                top: 9,
-                child: CircleAvatar(radius: 4, backgroundColor: logbookDanger),
-              ),
-              ],
-            ),
-          ),
-        ),
-      ],
+      actions: const [],
     ),
     floatingActionButton: FloatingActionButton(
       heroTag: 'add-logbook',

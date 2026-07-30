@@ -218,7 +218,6 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
         ),
       ),
     ),
-    bottomNavigationBar: _bottomNav(),
   );
 
   Widget _label(String text) => Padding(
@@ -365,37 +364,4 @@ class _PendaftaranPageState extends State<PendaftaranPage> {
     ),
   );
 
-  Widget _bottomNav() => NavigationBar(
-    selectedIndex: 1,
-    onDestinationSelected: (_) {},
-    height: 74,
-    indicatorColor: AppColors.primaryLight,
-    destinations: const [
-      NavigationDestination(
-        icon: Icon(Icons.home_outlined),
-        selectedIcon: Icon(Icons.home_rounded),
-        label: 'Beranda',
-      ),
-      NavigationDestination(
-        icon: Icon(Icons.assignment_outlined),
-        selectedIcon: Icon(Icons.assignment),
-        label: 'Daftar',
-      ),
-      NavigationDestination(
-        icon: Icon(Icons.edit_note_outlined),
-        selectedIcon: Icon(Icons.edit_note),
-        label: 'Logbook',
-      ),
-      NavigationDestination(
-        icon: Icon(Icons.workspace_premium_outlined),
-        selectedIcon: Icon(Icons.workspace_premium),
-        label: 'Sertifikat',
-      ),
-      NavigationDestination(
-        icon: Icon(Icons.person_outline),
-        selectedIcon: Icon(Icons.person),
-        label: 'Profil',
-      ),
-    ],
-  );
 }
