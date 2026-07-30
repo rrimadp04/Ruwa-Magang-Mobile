@@ -42,16 +42,7 @@ class _HomeShellState extends State<HomeShell> {
 
   Future<void> _selectTab(int index) async {
     if (index == 2 || index == 3) {
-      final status = await _statusFuture;
-      if (status != RegistrationStatus.accepted) {
-        if (!mounted) return;
-        final message = status == RegistrationStatus.pending
-            ? 'Pendaftaran Anda masih diproses. Fitur ini tersedia setelah pendaftaran diterima.'
-            : 'Silakan lengkapi pendaftaran terlebih dahulu untuk membuka fitur ini.';
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
-        setState(() => _index = 1);
-        return;
-      }
+      if (!await _canAccessInternshipFeature()) return;
     }
     if (mounted) {
       setState(() {
@@ -100,10 +91,27 @@ class _HomeShellState extends State<HomeShell> {
   Widget _progress(_Progress p) => Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: Colors.white, border: Border.all(color: const Color(0xFFE5E7EF)), borderRadius: BorderRadius.circular(20)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Kemajuan Magang', style: TextStyle(fontWeight: FontWeight.w800, color: _ink)), SizedBox(height: 4), Text('Berdasarkan durasi kontrak', style: TextStyle(fontSize: 10, color: Color(0xFF667085)))])), Text('${p.percent}%', style: const TextStyle(fontSize: 23, color: _primary))]), const SizedBox(height: 19), LinearProgressIndicator(value: p.value, minHeight: 9, backgroundColor: const Color(0xFFE8EDFA), color: _primary), const SizedBox(height: 14), Text('Minggu ${p.week} dari ${p.totalWeeks} • ${p.remainingDays} Hari Lagi', style: const TextStyle(fontSize: 10, color: Color(0xFF475467)))]));
   Widget _activity(IconData icon, String title, String subtitle, Color tint, IconData action, VoidCallback tap) => Material(color: Colors.white, borderRadius: BorderRadius.circular(14), child: InkWell(onTap: tap, borderRadius: BorderRadius.circular(14), child: Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(border: Border.all(color: const Color(0xFFE5E7EF)), borderRadius: BorderRadius.circular(14)), child: Row(children: [Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: tint, borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: _primary)), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)), Text(subtitle, style: const TextStyle(fontSize: 10, color: Color(0xFF667085)))])), Container(padding: const EdgeInsets.all(9), decoration: BoxDecoration(color: _primary, borderRadius: BorderRadius.circular(10)), child: Icon(action, color: Colors.white, size: 18))]))));
   Future<void> _openPresensi() async {
+    if (!await _canAccessInternshipFeature()) return;
+    if (!mounted) return;
     await Navigator.of(context).push(MaterialPageRoute(builder: (_) => PresensiScreen(repository: widget.presensiRepository)));
     if (mounted) setState(() => _dashboardFuture = widget.dashboardRepository.getDashboard());
   }
-  void _openDashboardFeature(int index) => setState(() => _index = index);
+
+  Future<bool> _canAccessInternshipFeature() async {
+    final status = await _statusFuture;
+    if (status == RegistrationStatus.accepted) return true;
+    if (!mounted) return false;
+
+    final message = status == RegistrationStatus.pending
+        ? 'Pendaftaran Anda masih diproses. Fitur ini tersedia setelah pendaftaran diterima.'
+        : 'Silakan lengkapi pendaftaran terlebih dahulu untuk membuka fitur ini.';
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    setState(() => _index = 1);
+    return false;
+  }
+  // Dashboard cards and Bottom Navigation must follow one navigation flow so
+  // both use the same injected repository and registration guard.
+  Future<void> _openDashboardFeature(int index) => _selectTab(index);
 }
 
 class _Progress { const _Progress(this.value, this.percent, this.week, this.totalWeeks, this.remainingDays); final double value; final int percent, week, totalWeeks, remainingDays; factory _Progress.fromDates(DateTime? start, DateTime? end, DateTime now) { if (start == null || end == null || end.isBefore(start)) return const _Progress(0, 0, 0, 0, 0); final total = end.difference(start).inDays + 1; final passed = now.isBefore(start) ? 0 : now.isAfter(end) ? total : now.difference(start).inDays + 1; return _Progress(passed / total, ((passed / total) * 100).round(), (passed / 7).ceil(), (total / 7).ceil(), total - passed); } }
