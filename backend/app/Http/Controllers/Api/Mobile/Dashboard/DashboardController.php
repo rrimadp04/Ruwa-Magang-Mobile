@@ -49,9 +49,19 @@ class DashboardController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'university' => $user->university,
                     'role' => $user->role,
                     'status' => $status,
                 ],
+                // Keep registration-owned information separate from account data.
+                // The mobile profile uses this once a registration exists.
+                'pendaftaran' => $pendaftaran ? [
+                    'prodi' => $pendaftaran->prodi,
+                    'status' => $pendaftaran->status,
+                    'opd_name' => $pendaftaran->opd?->nama_opd ?? $pendaftaran->opd?->name,
+                    'start_date' => $pendaftaran->start_date?->toDateString(),
+                    'end_date' => $pendaftaran->end_date?->toDateString(),
+                ] : null,
                 'peserta' => $peserta,
                 'status_label' => $statusLabel,
                 'opd' => $pendaftaran?->opd ? [
