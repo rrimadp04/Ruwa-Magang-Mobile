@@ -3,24 +3,6 @@ import '../../../core/constants/app_colors.dart';
 import '../models/opd_model.dart';
 import '../../pendaftaran/pages/pendaftaran_page.dart';
 
-const _bidangKuota = [
-  'BIDANG LAYANAN, TEKNOLOGI INFORMASI DAN KOMUNIKASI, PELESTARIAN, DAN KERJASAMA',
-  'BIDANG AKUNTANSI',
-  'BIDANG KESEHATAN MASYARAKAT',
-  'BIDANG ENERGI',
-  'BIDANG HUKUM',
-  'BIDANG PENGELOLAAN DAN LAYANAN INFORMASI PUBLIK',
-  'BIDANG PENGELOLAAN DAERAH ALIRAN SUNGAI (DAS) DAN REHABILITASI HUTAN DAN LAHAN (RHL)',
-  'BIDANG PERENCANAAN DAN PEMANFAATAN HUTAN',
-  'BIDANG PERLINDUNGAN DAN KONSERVASI HUTAN',
-  'BIDANG PERSANDIAN DAN STATISTIK',
-  'BIDANG PENYULUHAN, PEMBERDAYAAN MASYARAKAT DAN USAHA KEHUTANAN',
-  'BIDANG PENGADAAN, PEMBERHENTIAN DAN INFORMASI KEPEGAWAIAN',
-  'BIDANG TEKNOLOGI INFORMASI DAN KOMUNIKASI',
-  'BIDANG BINA KONSTRUKSI',
-  'SEKRETARIAT',
-];
-
 class DetailOpdPage extends StatelessWidget {
   const DetailOpdPage({super.key, required this.opd});
 
@@ -47,10 +29,23 @@ class DetailOpdPage extends StatelessWidget {
         ),
       ],
     ),
+    bottomNavigationBar: NavigationBar(
+      selectedIndex: 1,
+      onDestinationSelected: (_) {},
+      height: 74,
+      indicatorColor: AppColors.primaryLight,
+      destinations: const [
+        NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: 'Beranda'),
+        NavigationDestination(icon: Icon(Icons.assignment_outlined), selectedIcon: Icon(Icons.assignment), label: 'Daftar'),
+        NavigationDestination(icon: Icon(Icons.edit_note_outlined), selectedIcon: Icon(Icons.edit_note), label: 'Logbook'),
+        NavigationDestination(icon: Icon(Icons.workspace_premium_outlined), selectedIcon: Icon(Icons.workspace_premium), label: 'Sertifikat'),
+        NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profil'),
+      ],
+    ),
     body: ListView(
       padding: const EdgeInsets.only(bottom: 30),
       children: [
-        // Header gradient card
+        // Header gradient
         Container(
           margin: const EdgeInsets.all(16),
           padding: const EdgeInsets.all(20),
@@ -141,18 +136,7 @@ class DetailOpdPage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 14),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                childAspectRatio: 1.3,
-              ),
-              itemCount: _bidangKuota.length,
-              itemBuilder: (_, i) => _bidangKuotaCard(_bidangKuota[i]),
-            ),
+            _bidangKuotaGrid(context),
           ],
         )),
         // Ringkasan
@@ -216,7 +200,28 @@ class DetailOpdPage extends StatelessWidget {
     ),
   );
 
-  Widget _bidangKuotaCard(String nama) => Container(
+  // ── Bidang & Kuota grid ────────────────────────────────────────────────────
+  Widget _bidangKuotaGrid(BuildContext context) {
+    // Gunakan bidangs dari API jika ada, fallback ke kDaftarBidang
+    final items = opd.bidangs.isNotEmpty
+        ? opd.bidangs
+        : kDaftarBidang.map((name) => OpdBidangModel(id: 0, name: name, kuota: 5, pesertaAktif: 0, sisa: 5, isFull: false, status: 'tersedia')).toList();
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: 1.25,
+      ),
+      itemCount: items.length,
+      itemBuilder: (_, i) => _bidangKuotaCard(items[i]),
+    );
+  }
+
+  Widget _bidangKuotaCard(OpdBidangModel b) => Container(
     padding: const EdgeInsets.all(10),
     decoration: BoxDecoration(
       color: AppColors.white,
@@ -230,26 +235,40 @@ class DetailOpdPage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Expanded(
-              child: Text(nama, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 10, color: AppColors.ink), maxLines: 2, overflow: TextOverflow.ellipsis),
+              child: Text(b.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 10, color: AppColors.ink), maxLines: 2, overflow: TextOverflow.ellipsis),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(color: const Color(0xFFD1FAE5), borderRadius: BorderRadius.circular(20)),
-              child: const Text('Tersedia', style: TextStyle(color: Color(0xFF065F46), fontSize: 9, fontWeight: FontWeight.w600)),
+              decoration: BoxDecoration(
+                color: b.isFull ? const Color(0xFFFEF2F2) : const Color(0xFFD1FAE5),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                b.isFull ? 'Penuh' : 'Tersedia',
+                style: TextStyle(color: b.isFull ? AppColors.error : const Color(0xFF065F46), fontSize: 9, fontWeight: FontWeight.w600),
+              ),
             ),
           ],
         ),
         const Divider(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [
-            _KuotaInfo(label: 'Terisi', value: '0'),
-            _KuotaInfo(label: 'Kuota', value: '5'),
-            _KuotaInfo(label: 'Sisa', value: '5'),
+          children: [
+            _kuotaInfo('Terisi', '${b.pesertaAktif}'),
+            _kuotaInfo('Kuota', '${b.kuota}'),
+            _kuotaInfo('Sisa', '${b.sisa}'),
           ],
         ),
       ],
     ),
+  );
+
+  Widget _kuotaInfo(String label, String value) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(label, style: const TextStyle(color: AppColors.grey, fontSize: 9)),
+      Text(value, style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.w700, fontSize: 11)),
+    ],
   );
 
   Widget _section({required Widget child}) => Container(
@@ -312,21 +331,6 @@ class DetailOpdPage extends StatelessWidget {
     children: [
       Text(label, style: const TextStyle(color: AppColors.grey, fontSize: 13)),
       Text(value, style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.w700, fontSize: 13)),
-    ],
-  );
-}
-
-class _KuotaInfo extends StatelessWidget {
-  const _KuotaInfo({required this.label, required this.value});
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(label, style: const TextStyle(color: AppColors.grey, fontSize: 9)),
-      Text(value, style: const TextStyle(color: AppColors.ink, fontWeight: FontWeight.w700, fontSize: 11)),
     ],
   );
 }

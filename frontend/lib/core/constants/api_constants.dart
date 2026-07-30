@@ -1,7 +1,7 @@
 class ApiConstants {
   static const baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:8000/api',
+    defaultValue: 'http://192.168.18.69:8001/api',
   );
   static const opd = '/opd';
   static const pendaftaran = '/pendaftaran';

@@ -10,4 +10,9 @@ class Logbook extends Model
     use HasFactory;
 
     protected $fillable = ['user_id', 'activity', 'logbook_date'];
+
+    protected function casts(): array
+    {
+        return ['logbook_date' => 'date'];
+    }
 }
